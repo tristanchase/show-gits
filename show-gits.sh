@@ -4,7 +4,7 @@
 #
 # Tristan M. Chase 2018-03-22
 #
-# Shows where your various git repos are.
+# Shows where your various git repos are and the status of each.
 #
 # Original one-liner:
 #find ~ -type d -name .git 2>/dev/null | xargs -n 1 dirname
