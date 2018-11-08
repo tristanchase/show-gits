@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 #
 # show-gits.sh
 #
 # Tristan M. Chase 2018-03-22
 #
-# Shows where your various git repos are and the status of each.
+# Shows where your various git repos are, the status of each, and any directories containing conflicted files.
 #
 # Original one-liner:
 #find ~ -type d -name .git 2>/dev/null | xargs -n 1 dirname
@@ -31,6 +31,16 @@ for f in `cat $dirfile`; do
 	cd $f;
 	git status -s;
 done
+
+echo ""
+
+# Search for conflicted files
+if [[ -z `find ~ -name "*conflicted*" 2>/dev/null` ]]; then
+	echo "No conflicted files found."
+else
+	echo "These directories contain conflicted files:"
+	find ~ -name "*conflicted*" 2>/dev/null | xargs -n 1 dirname | sort | uniq
+fi
 
 # Return to the starting directory
 cd $startdir
