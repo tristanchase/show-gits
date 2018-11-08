@@ -24,7 +24,7 @@ cleanup () {
 startdir="`pwd`"
 
 # Get the git repos and the status of each
-find ~ -type d -name .git 2>/dev/null | xargs -n 1 dirname | sort > $dirfile
+find ~ -type d -name "*.git" 2>/dev/null | xargs -n 1 dirname | sort > $dirfile
 
 for f in `cat $dirfile`; do
 	echo $f; 
