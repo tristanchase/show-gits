@@ -11,3 +11,5 @@ This script will do just that! *And* you can pipe it to vim and work some netrw 
 `show-gits | vim -`
 
 More to follow...
+
+Found isnpiration here https://gist.github.com/mzabriskie/6631607
