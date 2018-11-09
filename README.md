@@ -1,6 +1,6 @@
 # show-gits
 
-I have several git repos sprinkled throughout my `$HOME` directory. I wrote a one-liner to fine them:
+I have several git repos sprinkled throughout my `$HOME` directory. I wrote a one-liner to find them:
 
 `find ~ -type d -name .git 2>/dev/null | xargs -n 1 dirname`
 
