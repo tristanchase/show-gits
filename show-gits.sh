@@ -30,16 +30,29 @@ for f in `cat $dirfile`; do
 	echo $f; 
 	cd $f;
 	git status -s;
+	#find . -path "*conflicted*" 2>/dev/null
 done
 
 echo ""
 
 # Search for conflicted files
-if [[ -z `find ~ -name "*conflicted*" 2>/dev/null` ]]; then
-	echo "No conflicted files found."
-else
+conflicts=0
+
+for g in `cat $dirfile`; do
+	if [[ -n `find $g -name "*conflicted*" 2>/dev/null` ]]; then
+		conflicts=1
+	fi
+done
+
+if [ $conflicts -eq 1 ]; then
 	echo "These directories contain conflicted files:"
-	find ~ -name "*conflicted*" 2>/dev/null | xargs -n 1 dirname | sort | uniq
+	for g in `cat $dirfile`; do
+		if [[ -n `find $g -name "*conflicted*" 2>/dev/null` ]]; then
+			find $g -name "*conflicted*" 2>/dev/null | xargs -n 1 dirname | sort | uniq
+		fi
+	done
+else
+	echo "No conflicted files found."
 fi
 
 # Return to the starting directory
