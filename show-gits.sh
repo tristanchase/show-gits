@@ -27,10 +27,9 @@ startdir="`pwd`"
 find ~ -type d -name "*.git" 2>/dev/null | xargs -n 1 dirname | sort > $dirfile
 
 for f in `cat $dirfile`; do
-	echo $f; 
+	echo $f;
 	cd $f;
 	git status -s;
-	#find . -path "*conflicted*" 2>/dev/null
 done
 
 echo ""
@@ -39,17 +38,17 @@ echo ""
 conflicts=0
 
 for g in `cat $dirfile`; do
-	if [[ -n `find $g -name "*conflicted*" 2>/dev/null` ]]; then
+	if [[ -n `find $g -iname "*conflicted*" 2>/dev/null` ]]; then
 		conflicts=1
 	fi
 done
 
 if [ $conflicts -eq 1 ]; then
 	echo "These directories contain conflicted files:"
-	for g in `cat $dirfile`; do
-		if [[ -n `find $g -name "*conflicted*" 2>/dev/null` ]]; then
-			find $g -name "*conflicted*" 2>/dev/null | xargs -n 1 dirname | sort | uniq
-		fi
+	for h in `cat $dirfile`; do
+		if [[ -n `find $h -iname "*conflicted*" 2>/dev/null` ]]; then
+			find $h -iname "*conflicted*" 2>/dev/null | xargs -n 1 dirname
+fi
 	done
 else
 	echo "No conflicted files found."
