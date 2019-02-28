@@ -55,7 +55,7 @@ if [ $conflicts -eq 1 ]; then
 fi
 	done
 else
-	echo "No conflicted files found."
+	echo "No conflicted files found in your git directories."
 fi
 
 # Return to the starting directory
