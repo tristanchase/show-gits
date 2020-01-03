@@ -12,4 +12,4 @@ This script will do just that! *And* you can pipe it to vim and work some netrw 
 
 More to follow...
 
-Found isnpiration here https://gist.github.com/mzabriskie/6631607
+Found inspiration here https://gist.github.com/mzabriskie/6631607
