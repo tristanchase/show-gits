@@ -10,7 +10,7 @@
 #find ~ -type d -name .git 2>/dev/null | xargs -n 1 dirname
 
 # Create temp file for output of find
-dirfile=/tmp/show-gits.$$
+dirfile="$HOME"/tmp/show-gits.$$
 touch $dirfile
 
 # Remove temp file on exit
