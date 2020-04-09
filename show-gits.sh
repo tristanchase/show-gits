@@ -1,21 +1,82 @@
-#!/bin/bash
-#
-# show-gits.sh
-#
-# Tristan M. Chase 2018-03-22
-#
+#!/usr/bin/env bash
+set -euo pipefail
+set -o errtrace
+#set -x
+IFS=$'\n\t'
+
+#-----------------------------------
+
+#/ Usage: show-gits [ {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} ]
+#/ Description: Show the git repositories in your "${HOME}" folder
+#/ Examples: show-gits --update, show-gits -l
+#/ Options:
+#/	 -h --help	Display this help message
+#/	 -l --list	Show the repos
+#/	 -u --update	Update the repos from remote
+#/	 -s --status	Get the short status of the repos
+
+# Created: 2018-03-22
+# Tristan M. Chase <tristan.m.chase@gmail.com>
+
+# Depends on:
+#  git
+
+#-----------------------------------
+# Low-tech help option
+
+__usage() { grep '^#/' "${0}" | cut -c4- ; exit 0 ; }
+expr "$*" : ".*--help" > /dev/null && __usage
+
+#-----------------------------------
+# Low-tech logging function
+
+readonly LOG_FILE=""${HOME}"/tmp/$(basename "${0}").log"
+__info()    { echo "[INFO]    $*" | tee -a "${LOG_FILE}" >&2 ; }
+__warning() { echo "[WARNING] $*" | tee -a "${LOG_FILE}" >&2 ; }
+__error()   { echo "[ERROR]   $*" | tee -a "${LOG_FILE}" >&2 ; }
+__fatal()   { echo "[FATAL]   $*" | tee -a "${LOG_FILE}" >&2 ; exit 1 ; }
+
+#-----------------------------------
+# Trap functions
+
+__traperr() {
+	__info "ERROR: ${BASH_SOURCE[1]}.$$ at line ${BASH_LINENO[0]}"
+}
+
+__ctrl_c(){
+	exit 2
+}
+
+__cleanup() {
+	rm ${_dirfile}
+
+	case "$?" in
+		0) # exit 0; success!
+			#do nothing
+			;;
+		2) # exit 2; user termination
+			__info ""$(basename $0).$$": script terminated by user."
+			;;
+		*) # any other exit number; indicates an error in the script
+			#clean up stray files
+			#__fatal ""$(basename $0).$$": [error message here]"
+			;;
+	esac
+}
+
+#-----------------------------------
+# Main Script Wrapper
+
+if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
+	trap __traperr ERR
+	trap __ctrl_c INT
+	trap __cleanup EXIT
+#-----------------------------------
+# Main Script goes here
 
 # Create temp file for output of find
 _dirfile="${HOME}"/tmp/show-gits.$$
 touch ${_dirfile}
-
-# Remove temp file on exit
-trap cleanup EXIT
-
-function cleanup() {
-	rm ${_dirfile}
-}
-
 
 # Save current directory
 _startdir="$(pwd)"
@@ -24,20 +85,20 @@ _startdir="$(pwd)"
 find ~ -type d -name ".git" 2>/dev/null | xargs -n 1 dirname | sort > ${_dirfile}
 
 # Find files with trailing whitespace
-function find_trailing_whitespace(){
+function __find_trailing_whitespace(){
 	if [[ -n "$(grep -n '\s$' 2>/dev/null *)" ]]; then
 		echo ">>>These files have trailing whitespace:"
 		grep -n '\s$' 2>/dev/null *
 	fi
 }
 
-# Show the repos (-l|--list)
-function show_repos(){
+#   -l --list	Show the repos
+function __show_repos(){
 	cat ${_dirfile}
 }
 
-# Update the repos from remote (-u|--update)
-function fetch_remotes(){
+#   -u --update	Update the repos from remote
+function __fetch_remotes(){
 	for _dir in $(cat ${_dirfile}); do
 		echo ${_dir}
 		cd ${_dir}
@@ -45,44 +106,54 @@ function fetch_remotes(){
 	done
 }
 
-function get_full_status(){
+function __get_full_status(){
 	for _dir in $(cat ${_dirfile}); do
 		echo ${_dir}
 		cd ${_dir}
 		git status
-		find_trailing_whitespace
+		__find_trailing_whitespace
 		echo ""
 	done
 }
 
-# Get the short status of the repos (-s|--status)
-function get_short_status() {
+#   -s --status	Get the short status of the repos
+function __get_short_status() {
 	for _dir in $(cat ${_dirfile}); do
 		cd ${_dir}
 		if [[ -n "$(git status -s)" ]]; then
 			echo ${_dir}
 			git status -s
-			find_trailing_whitespace
+			__find_trailing_whitespace
 		fi
 	done
 }
 
-if [[ "${1}" =~ (-u|--update) ]]; then
-	fetch_remotes
-elif [[ "${1}" =~ (-s|--status) ]]; then
-	get_short_status
-elif [[ "${1}" =~ (-l|--list) ]]; then
-	show_repos
+# Runtime
+if [[ "${1:-}" =~ (-u|--update) ]]; then
+	__fetch_remotes
+elif [[ "${1:-}" =~ (-s|--status) ]]; then
+	__get_short_status
+elif [[ "${1:-}" =~ (-l|--list) ]]; then
+	__show_repos
+elif [[ "${1:-}" =~ (-h|--help) ]]; then
+	__usage
 else
-	get_full_status
+	__get_full_status
 fi
+# End runtime
 
 # Return to the starting directory
 cd ${_startdir}
 
+# Main Script ends here
+#-----------------------------------
+
+fi
+
+# End of Main Script Wrapper
+#-----------------------------------
+
 exit 0
 
 # TODO
-# * Add boilerplate
 # * Make options more robust with getopt
-# * Update description and options
