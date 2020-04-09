@@ -4,96 +4,85 @@
 #
 # Tristan M. Chase 2018-03-22
 #
-# Shows where your various git repos are, the status of each, and any directories containing conflicted files.
-#
-# Original one-liner:
-#find ~ -type d -name .git 2>/dev/null | xargs -n 1 dirname
 
 # Create temp file for output of find
-dirfile="$HOME"/tmp/show-gits.$$
-touch $dirfile
+_dirfile="${HOME}"/tmp/show-gits.$$
+touch ${_dirfile}
 
 # Remove temp file on exit
 trap cleanup EXIT
 
-cleanup () {
-	rm $dirfile
+function cleanup() {
+	rm ${_dirfile}
 }
 
 
 # Save current directory
-startdir="`pwd`"
+_startdir="$(pwd)"
 
-# Find the git repos in the $HOME directory
-find ~ -type d -name ".git" 2>/dev/null | xargs -n 1 dirname | sort > $dirfile
+# Find the git repos in the ${HOME} directory
+find ~ -type d -name ".git" 2>/dev/null | xargs -n 1 dirname | sort > ${_dirfile}
 
-# Show the repos
-show_repos(){
-	cat $dirfile
+# Find files with trailing whitespace
+function find_trailing_whitespace(){
+	if [[ -n "$(grep -n '\s$' 2>/dev/null *)" ]]; then
+		echo ">>>These files have trailing whitespace:"
+		grep -n '\s$' 2>/dev/null *
+	fi
 }
 
-# Update the repos from remote
-fetch_remotes(){
-	for f in `cat $dirfile`; do
-		echo $f;
-		cd $f;
+# Show the repos (-l|--list)
+function show_repos(){
+	cat ${_dirfile}
+}
+
+# Update the repos from remote (-u|--update)
+function fetch_remotes(){
+	for _dir in $(cat ${_dirfile}); do
+		echo ${_dir}
+		cd ${_dir}
 		git remote update
 	done
 }
 
-# Get the status of the repos
-get_status() {
-	for f in `cat $dirfile`; do
-		cd $f;
+function get_full_status(){
+	for _dir in $(cat ${_dirfile}); do
+		echo ${_dir}
+		cd ${_dir}
+		git status
+		find_trailing_whitespace
+		echo ""
+	done
+}
+
+# Get the short status of the repos (-s|--status)
+function get_short_status() {
+	for _dir in $(cat ${_dirfile}); do
+		cd ${_dir}
 		if [[ -n "$(git status -s)" ]]; then
-			echo $f
-			git status -s;
+			echo ${_dir}
+			git status -s
+			find_trailing_whitespace
 		fi
 	done
-	echo ""
 }
 
-# Search for conflicted files
-get_conflicted() {
-	conflicts=0
-
-	for g in `cat $dirfile`; do
-		if [[ -n `find $g -iname "*conflicted*" 2>/dev/null` ]]; then
-			conflicts=1
-		fi
-	done
-
-	if [ $conflicts -eq 1 ]; then
-		echo "These directories contain conflicted files:"
-		for h in `cat $dirfile`; do
-			if [[ -n `find $h -iname "*conflicted*" 2>/dev/null` ]]; then
-				find $h -iname "*conflicted*" 2>/dev/null | xargs -n 1 dirname
-			fi
-		done
-	else
-		echo "No conflicted files found in your git directories."
-	fi
-}
-
-# Main
-if [[ "$1" =~ (-u|--update) ]]; then
+if [[ "${1}" =~ (-u|--update) ]]; then
 	fetch_remotes
-elif [[ "$1" =~ (-s|--status) ]]; then
-	get_status
-	get_conflicted
-else
+elif [[ "${1}" =~ (-s|--status) ]]; then
+	get_short_status
+elif [[ "${1}" =~ (-l|--list) ]]; then
 	show_repos
+else
+	get_full_status
 fi
 
 # Return to the starting directory
-cd $startdir
+cd ${_startdir}
 
 exit 0
 
 # TODO
 # * Add boilerplate
-# * Edit variable names to be more conformant
-# * Edit function names to be more conformant
-# * Modify command substitution to "$(this_style)"
-# * Clean up stray ;'s
 # * Make options more robust with getopt
+# * Update description and options
