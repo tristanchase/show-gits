@@ -24,30 +24,30 @@ IFS=$'\n\t'
 #-----------------------------------
 # Low-tech help option
 
-__usage() { grep '^#/' "${0}" | cut -c4- ; exit 0 ; }
+function __usage() { grep '^#/' "${0}" | cut -c4- ; exit 0 ; }
 expr "$*" : ".*--help" > /dev/null && __usage
 
 #-----------------------------------
 # Low-tech logging function
 
 readonly LOG_FILE=""${HOME}"/tmp/$(basename "${0}").log"
-__info()    { echo "[INFO]    $*" | tee -a "${LOG_FILE}" >&2 ; }
-__warning() { echo "[WARNING] $*" | tee -a "${LOG_FILE}" >&2 ; }
-__error()   { echo "[ERROR]   $*" | tee -a "${LOG_FILE}" >&2 ; }
-__fatal()   { echo "[FATAL]   $*" | tee -a "${LOG_FILE}" >&2 ; exit 1 ; }
+function __info()    { echo "[INFO]    $*" | tee -a "${LOG_FILE}" >&2 ; }
+function __warning() { echo "[WARNING] $*" | tee -a "${LOG_FILE}" >&2 ; }
+function __error()   { echo "[ERROR]   $*" | tee -a "${LOG_FILE}" >&2 ; }
+function __fatal()   { echo "[FATAL]   $*" | tee -a "${LOG_FILE}" >&2 ; exit 1 ; }
 
 #-----------------------------------
 # Trap functions
 
-__traperr() {
-	__info "ERROR: ${BASH_SOURCE[1]}.$$ at line ${BASH_LINENO[0]}"
+function __traperr() {
+	__info "ERROR: ${FUNCNAME[1]}: ${BASH_COMMAND}: $?: ${BASH_SOURCE[1]}.$$ at line ${BASH_LINENO[0]}"
 }
 
-__ctrl_c(){
+function __ctrl_c() {
 	exit 2
 }
 
-__cleanup() {
+function __cleanup() {
 	rm ${_dirfile}
 
 	case "$?" in
@@ -59,7 +59,7 @@ __cleanup() {
 			;;
 		*) # any other exit number; indicates an error in the script
 			#clean up stray files
-			#__fatal ""$(basename $0).$$": [error message here]"
+			__fatal ""$(basename $0).$$": [error message here]"
 			;;
 	esac
 }
@@ -75,7 +75,7 @@ if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
 # Main Script goes here
 
 # Create temp file for output of find
-_dirfile="${HOME}"/tmp/show-gits.$$
+_dirfile="${HOME}"/tmp/show-gits.$$.tempfile
 touch ${_dirfile}
 
 # Save current directory
@@ -84,11 +84,11 @@ _startdir="$(pwd)"
 # Find the git repos in the ${HOME} directory
 find ~ -type d -name ".git" 2>/dev/null | xargs -n 1 dirname | sort > ${_dirfile}
 
-# Find files with trailing whitespace
+# Find files with trailing whitespace (but not .pdf's or other binary files)
 function __find_trailing_whitespace(){
-	if [[ -n "$(grep -n '\s$' 2>/dev/null *)" ]]; then
+	if [[ -n "$(grep --files-with-matches --binary-files=without-match '\s$' 2>/dev/null *)" ]]; then
 		echo ">>>These files have trailing whitespace:"
-		grep -n '\s$' 2>/dev/null *
+		grep --binary-files=without-match '\s$' 2>/dev/null *
 	fi
 }
 
