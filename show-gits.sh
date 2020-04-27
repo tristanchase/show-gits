@@ -96,7 +96,7 @@ find ~ -type d -name ".git" 2>/dev/null | xargs -n 1 dirname | sort > ${_dirfile
 function __find_trailing_whitespace(){
 	if [[ -n "$(grep --files-with-matches --binary-files=without-match '\s$' 2>/dev/null *)" ]]; then
 		echo ">>>These files have trailing whitespace:"
-		grep --binary-files=without-match '\s$' 2>/dev/null *
+		grep  --files-with-matches --binary-files=without-match '\s$' 2>/dev/null * | xargs realpath
 	fi
 }
 
