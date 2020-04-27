@@ -1,19 +1,27 @@
 #!/usr/bin/env bash
+
+# Enable debug mode
+if [[ "${1:-}" =~ (-d|--debug) ]]; then
+	set -x
+	exec > >(tee ""${HOME}"/tmp/$(basename "${0}")-debug.$$") 2>&1
+	shift
+fi
+
 set -euo pipefail
 set -o errtrace
-#set -x
 IFS=$'\n\t'
 
 #-----------------------------------
 
-#/ Usage: show-gits [ {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} ]
-#/ Description: Show the git repositories in your "${HOME}" folder
-#/ Examples: show-gits --update, show-gits -l
-#/ Options:
-#/	 -h --help	Display this help message
-#/	 -l --list	Show the repos
-#/	 -u --update	Update the repos from remote
-#/	 -s --status	Get the short status of the repos
+#//Usage: show-gits [ {-d|--debug} ] [ {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} ]
+#//Description: Show the git repositories in your "${HOME}" folder
+#//Examples: show-gits --update; show-gits -l
+#//Options:
+#//	-d --debug	Enable debug mode
+#//	-h --help	Display this help message
+#//	-l --list	Show the repos
+#//	-s --status	Get the short status of the repos
+#//	-u --update	Update the repos from remote
 
 # Created: 2018-03-22
 # Tristan M. Chase <tristan.m.chase@gmail.com>
@@ -24,8 +32,8 @@ IFS=$'\n\t'
 #-----------------------------------
 # Low-tech help option
 
-function __usage() { grep '^#/' "${0}" | cut -c4- ; exit 0 ; }
-expr "$*" : ".*--help" > /dev/null && __usage
+function __usage() { grep '^#//' "${0}" | cut -c4- ; exit 0 ; }
+expr "$*" : ".*-h\|--help" > /dev/null && __usage
 
 #-----------------------------------
 # Low-tech logging function
@@ -92,12 +100,12 @@ function __find_trailing_whitespace(){
 	fi
 }
 
-#   -l --list	Show the repos
+# Show the repos (-l|--list)
 function __show_repos(){
 	cat ${_dirfile}
 }
 
-#   -u --update	Update the repos from remote
+# Update the repos from remote (-u|--update)
 function __fetch_remotes(){
 	for _dir in $(cat ${_dirfile}); do
 		echo ${_dir}
@@ -116,7 +124,7 @@ function __get_full_status(){
 	done
 }
 
-#   -s --status	Get the short status of the repos
+# Get the short status of the repos (-s|--status)
 function __get_short_status() {
 	for _dir in $(cat ${_dirfile}); do
 		cd ${_dir}
@@ -135,8 +143,6 @@ elif [[ "${1:-}" =~ (-s|--status) ]]; then
 	__get_short_status
 elif [[ "${1:-}" =~ (-l|--list) ]]; then
 	__show_repos
-elif [[ "${1:-}" =~ (-h|--help) ]]; then
-	__usage
 else
 	__get_full_status
 fi
