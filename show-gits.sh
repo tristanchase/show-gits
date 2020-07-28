@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
+set -o errexit
+set -o nounset
+set -o errtrace
+set -o pipefail
 
 # Enable debug mode
 if [[ "${1:-}" =~ (-d|--debug) ]]; then
-	set -x
+	set -o verbose
+	set -o xtrace
+	# next 3 lines moved here (see NOTE below)
+	#set -o errtrace
+	#set -o pipefail
+	#trap __traperr ERR
 	exec > >(tee ""${HOME}"/tmp/$(basename "${0}")-debug.$$") 2>&1
 	shift
 fi
 
-set -euo pipefail
-set -o errtrace
 IFS=$'\n\t'
+# Allow bash to use **/ to match directories and subdirectories
+shopt -s globstar
 
 #-----------------------------------
 
@@ -90,7 +99,9 @@ touch ${_dirfile}
 _startdir="$(pwd)"
 
 # Find the git repos in the ${HOME} directory
-find ~ -type d -name ".git" 2>/dev/null | xargs -n 1 dirname | sort > ${_dirfile}
+#find "${HOME}" -type d -name ".git" 2>/dev/null | xargs -n 1 dirname | sort > ${_dirfile}
+# NOTE: find exits with 1 because it encounters "Permission denied" files.  This in turn causes the error checking to terminate the program. I rearranged the settings to be included in the debug mode only.
+printf "%b\n" ~/**/.git | sed 's/\/\.git//g' > ${_dirfile}
 
 # Find files with trailing whitespace (but not .pdf's or other binary files)
 function __find_trailing_whitespace(){
