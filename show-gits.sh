@@ -92,6 +92,7 @@ if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
 # Main Script goes here
 
 # Create temp file for output of find
+# TODO Use variable only?
 _dirfile="${HOME}"/tmp/show-gits.$$.tempfile
 touch ${_dirfile}
 
@@ -99,14 +100,12 @@ touch ${_dirfile}
 _startdir="$(pwd)"
 
 # Find the git repos in the ${HOME} directory
-#find "${HOME}" -type d -name ".git" 2>/dev/null | xargs -n 1 dirname | sort > ${_dirfile}
-# NOTE: find exits with 1 because it encounters "Permission denied" files.  This in turn causes the error checking to terminate the program. I rearranged the settings to be included in the debug mode only.
 printf "%b\n" ~/**/.git | sed 's/\/\.git//g' > ${_dirfile}
 
 # Find files with trailing whitespace (but not .pdf's or other binary files)
 function __find_trailing_whitespace(){
 	if [[ -n "$(grep --files-with-matches --binary-files=without-match '\s$' 2>/dev/null *)" ]]; then
-		echo ">>>These files have trailing whitespace:"
+		printf "%b\n" ">>>These files have trailing whitespace:"
 		grep  --files-with-matches --binary-files=without-match '\s$' 2>/dev/null * | xargs realpath
 	fi
 }
@@ -119,29 +118,27 @@ function __show_repos(){
 # Update the repos from remote (-u|--update)
 function __fetch_remotes(){
 	for _dir in $(cat ${_dirfile}); do
-		echo ${_dir}
-		cd ${_dir}
-		git remote update
+		printf "%b\n" ${_dir}
+		git -C "${_dir}" remote update
 	done
 }
 
+# Get the full status of the repos (default)
 function __get_full_status(){
 	for _dir in $(cat ${_dirfile}); do
-		echo ${_dir}
-		cd ${_dir}
-		git status
+		printf "%b\n" ${_dir}
+		git -C "${_dir}" status
 		__find_trailing_whitespace
-		echo ""
+		printf "%b\n" ""
 	done
 }
 
 # Get the short status of the repos (-s|--status)
 function __get_short_status() {
 	for _dir in $(cat ${_dirfile}); do
-		cd ${_dir}
-		if [[ -n "$(git status -s)" ]]; then
-			echo ${_dir}
-			git status -s
+		if [[ -n "$(git -C "${_dir}" status -s)" ]]; then
+			printf "%b\n" ${_dir}
+			git -C "${_dir}" status -s
 			__find_trailing_whitespace
 		fi
 	done
