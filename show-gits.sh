@@ -22,11 +22,12 @@ shopt -s globstar
 
 #-----------------------------------
 
-#//Usage: show-gits [ {-d|--debug} ] [ {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} ]
+#//Usage: show-gits [ {-d|--debug} ] [ {-f|--full} {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} ]
 #//Description: Show the git repositories in your "${HOME}" folder
 #//Examples: show-gits --update; show-gits -l
 #//Options:
 #//	-d --debug	Enable debug mode
+#//	-f --full	Show full report of the repos
 #//	-h --help	Display this help message
 #//	-l --list	Show the repos
 #//	-s --status	Get the short status of the repos
@@ -112,6 +113,15 @@ function __find_trailing_whitespace(){
 	fi
 }
 
+# Get a list of the repos with the short status (default)
+function __get_list_short(){
+	for _dir in $(cat ${_dirfile}); do
+		printf "%b\n" ${_dir}
+		git -C "${_dir}" status -s
+		__find_trailing_whitespace
+	done
+}
+
 # Show the repos (-l|--list)
 function __show_repos(){
 	cat ${_dirfile}
@@ -125,7 +135,7 @@ function __fetch_remotes(){
 	done
 }
 
-# Get the full status of the repos (default)
+# Get the full status of the repos (-f|--full)
 function __get_full_status(){
 	for _dir in $(cat ${_dirfile}); do
 		printf "%b\n" ${_dir}
@@ -153,8 +163,10 @@ elif [[ "${1:-}" =~ (-s|--status) ]]; then
 	__get_short_status
 elif [[ "${1:-}" =~ (-l|--list) ]]; then
 	__show_repos
-else
+elif [[ "${1:-}" =~ (-f|--full) ]]; then
 	__get_full_status
+else
+	__get_list_short
 fi
 # End runtime
 
