@@ -101,8 +101,8 @@ touch ${_dirfile}
 _startdir="$(pwd)"
 
 # Find the git repos in the ${HOME} directory
-printf "%b\n" ~/**/.git | sed 's/\/\.git//g' > ${_dirfile}
-printf '%b\n' $HOME/.*/**/.git | grep -v /./ | grep -v /../ | sed 's/\/\.git//g' >> ${_dirfile}
+printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > ${_dirfile}
+printf '%b\n' ${HOME}/.*/**/.git | grep -v /./ | grep -v /../ | sed 's/\/\.git//g' >> ${_dirfile}
 #printf "%b\n" ~/.*/.git | sed 's/\/\.git//g' | grep -v "\/\."$ >> ${_dirfile}
 
 # Find files with trailing whitespace (but not .pdf's or other binary files)
