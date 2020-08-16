@@ -102,9 +102,10 @@ touch ${_dirfile}
 # Save current directory
 _startdir="$(pwd)"
 
-# Find the git repos in the ${HOME} directory
+# Find the git repos in the ${HOME} directory (but exclude ~/.cache/)
 printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > ${_dirfile}
-printf '%b\n' ${HOME}/.*/**/.git | grep -Ev '/\.(\.)?/' | sed 's/\/\.git//g' >> ${_dirfile}
+printf '%b\n' ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> ${_dirfile}
+#printf '%b\n' ${HOME}/.*/**/.git | grep -Ev '/\.(\.)?/' | sed 's/\/\.git//g' >> ${_dirfile}
 
 # Find files with trailing whitespace (but not .pdf's or other binary files)
 function __find_trailing_whitespace(){
