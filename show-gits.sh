@@ -17,6 +17,7 @@ if [[ "${1:-}" =~ (-d|--debug) ]]; then
 fi
 
 IFS=$'\n\t'
+
 # Allow bash to use **/ to match directories and subdirectories
 shopt -s globstar
 
@@ -92,6 +93,7 @@ if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
 #-----------------------------------
 # Main Script goes here
 
+
 # Create temp file for output of find
 # TODO Use variable only?
 _dirfile="${HOME}"/tmp/show-gits.$$.tempfile
@@ -103,7 +105,6 @@ _startdir="$(pwd)"
 # Find the git repos in the ${HOME} directory
 printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > ${_dirfile}
 printf '%b\n' ${HOME}/.*/**/.git | grep -Ev '/\.(\.)?/' | sed 's/\/\.git//g' >> ${_dirfile}
-#printf '%b\n' ${HOME}/.*/**/.git | grep -v /./ | grep -v /../ | sed 's/\/\.git//g' >> ${_dirfile}
 
 # Find files with trailing whitespace (but not .pdf's or other binary files)
 function __find_trailing_whitespace(){
@@ -114,10 +115,19 @@ function __find_trailing_whitespace(){
 	fi
 }
 
+# Show git status à la git-prompt.sh
+function __git_prompt {
+	if [[ -e $HOME/.git-prompt.sh ]]; then
+		source ~/.git-prompt.sh
+		__git_ps1 2>/dev/null
+	fi
+}
+
 # Get a list of the repos with the short status (default)
 function __get_list_short(){
 	for _dir in $(cat ${_dirfile}); do
-		printf "%b\n" ${_dir}
+		cd "${_dir}"
+		printf "%b\n" "${_dir}$(__git_prompt)"
 		git -C "${_dir}" status -s
 		__find_trailing_whitespace
 	done
@@ -139,7 +149,9 @@ function __fetch_remotes(){
 # Get the full status of the repos (-f|--full)
 function __get_full_status(){
 	for _dir in $(cat ${_dirfile}); do
-		printf "%b\n" ${_dir}
+		#printf "%b\n" ${_dir}
+		cd "${_dir}"
+		printf "%b\n" "${_dir}$(__git_prompt)"
 		git -C "${_dir}" status
 		__find_trailing_whitespace
 		printf "%b\n" ""
@@ -150,7 +162,9 @@ function __get_full_status(){
 function __get_short_status() {
 	for _dir in $(cat ${_dirfile}); do
 		if [[ -n "$(git -C "${_dir}" status -s)" ]]; then
-			printf "%b\n" ${_dir}
+			#printf "%b\n" ${_dir}
+			cd "${_dir}"
+			printf "%b\n" "${_dir}$(__git_prompt)"
 			git -C "${_dir}" status -s
 			__find_trailing_whitespace
 		fi
