@@ -178,11 +178,11 @@ if [[ "${1:-}" =~ (-u|--update) ]]; then
 elif [[ "${1:-}" =~ (-s|--status) ]]; then
 	__get_short_status
 elif [[ "${1:-}" =~ (-l|--list) ]]; then
-	__show_repos
+	__show_repos | more
 elif [[ "${1:-}" =~ (-f|--full) ]]; then
-	__get_full_status
+	__get_full_status | more
 else
-	__get_list_short
+	__get_list_short | more
 fi
 # End runtime
 
