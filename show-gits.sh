@@ -111,11 +111,9 @@ printf '%b\n' ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//
 
 # Find files with trailing whitespace (but not .pdf's or other binary files)
 function __find_trailing_whitespace(){
-	if [[ -n "$(grep -r --files-with-matches --binary-files=without-match '\s$' 2>/dev/null "${_dir}"/*)" ]]; then
-
+	if [[ -n "$(grep --files-with-matches --binary-files=without-match '\s$' 2>/dev/null "${_dir}"/*)" ]]; then
 		printf "${WHT:-}${CYNB:-}%s\n" ">>>These files have trailing whitespace:"
-		grep -r  --files-with-matches --binary-files=without-match '\s$' 2>/dev/null "${_dir}"/* | xargs realpath
-
+		grep --files-with-matches --binary-files=without-match '\s$' 2>/dev/null "${_dir}"/* | xargs realpath
 		printf ""${reset:-}"%b\n"
 	fi
 }
