@@ -25,7 +25,7 @@
 # * Replace _dirfile tempfile with array
 
 # DONE
-# + Options not working; change layout
+# + Tempfiles not getting cleaned up: fixed
 
 #-----------------------------------
 # License Section
@@ -36,9 +36,10 @@
 
 # Initialize variables
 #_temp="file.$$"
+_dirfile=""${HOME}"/tmp/show-gits.$$.tempfile"
 
 # List of temp files to clean up on exit (put last)
-#_tempfiles=("${_temp}")
+_tempfiles=("${_dirfile}")
 
 # Put main script here
 function __main_script__ {
@@ -46,7 +47,6 @@ function __main_script__ {
 
 	# Create temp file for output of find
 	# TODO Use array only?
-	_dirfile=""${HOME}"/tmp/show-gits.$$.tempfile"
 	touch "${_dirfile}"
 
 	# Save current directory
