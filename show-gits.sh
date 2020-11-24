@@ -25,7 +25,8 @@
 # * Replace _dirfile tempfile with array
 
 # DONE
-# + Tempfiles not getting cleaned up: fixed
+# + Change git prompt function
+#   + Show different color if repo has any changes
 
 #-----------------------------------
 # License Section
@@ -65,7 +66,7 @@ function __main_script__ {
 	elif [[ "${_show_repos__yN:-}" = "y" ]];then
 		__show_repos__ | more
 	elif [[ "${_get_full_status__yN:-}" = "y" ]];then
-		__get_full_status__ | more
+		__get_full_status__ | less -RFM +Gg
 	else
 		__get_list_short__ | more
 	fi
@@ -88,18 +89,27 @@ function __find_trailing_whitespace_l__ {
 }
 
 # Show git status à la git-prompt.sh
+function __git_ps1__ {
+	__git_ps1 2>/dev/null
+}
+
 function __git_prompt__ {
-	if [[ -e "${HOME}"/.git-prompt.sh ]]; then
-		source ~/.git-prompt.sh
-		__git_ps1 2>/dev/null
+	if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
+		_git_prompt_color="${bold_orange}"
+	else
+		_git_prompt_color="${BCYN}"
 	fi
+
+	#printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_ps1__)"
+	printf "$(__git_ps1__)"
 }
 
 # Get a list of the repos with the short status (default)
 function __get_list_short__ {
 	for _dir in $(cat "${_dirfile}"); do
 		cd "${_dir}"
-		printf ""${BBLU:-}"%s"${BCYN:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+		#printf ""${BBLU:-}"%s"${BCYN:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 		git -C "${_dir}" status -s
 		__find_trailing_whitespace_l__
 	done
@@ -125,7 +135,8 @@ function __get_full_status__ {
 		#printf "%b\n" "${_dir}"
 		cd "${_dir}"
 		#printf "%b\n" ""${_dir}"$(__git_prompt__)"
-		printf ""${BBLU:-}"%s"${BCYN:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+		#printf ""${BBLU:-}"%s"${BCYN:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 		git -C "${_dir}" status
 		__find_trailing_whitespace_l__
 		printf "%b\n" ""
@@ -139,7 +150,8 @@ function __get_short_status__ {
 			#printf "%b\n" "${_dir}"
 			cd "${_dir}"
 			#printf "%b\n" ""${_dir}"$(__git_prompt__)"
-			printf ""${BBLU:-}"%s"${BCYN:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+			#printf ""${BBLU:-}"%s"${BCYN:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 			git -C "${_dir}" status -s
 			__find_trailing_whitespace_l__
 		fi
@@ -153,6 +165,10 @@ function __local_cleanup__ {
 # Source helper functions
 if [[ -e ~/.functions.sh ]]; then
 	source ~/.functions.sh
+fi
+
+if [[ -e "${HOME}"/.git-prompt.sh ]]; then
+	source ~/.git-prompt.sh
 fi
 
 # Get some basic options
