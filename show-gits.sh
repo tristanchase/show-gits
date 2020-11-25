@@ -25,8 +25,7 @@
 # * Replace _dirfile tempfile with array
 
 # DONE
-# + Change git prompt function
-#   + Show different color if repo has any changes
+# + Show repos in short status function that are not up-to-date
 
 #-----------------------------------
 # License Section
@@ -146,16 +145,14 @@ function __get_full_status__ {
 # Get the short status of the repos (-s|--status)
 function __get_short_status__ {
 	for _dir in $(cat "${_dirfile}"); do
-		if [[ -n "$(git -C "${_dir}" status -s)" ]]; then
-			#printf "%b\n" "${_dir}"
+			#if [[ -n "$(git -C "${_dir}" status -s)" ]]; then
 			cd "${_dir}"
-			#printf "%b\n" ""${_dir}"$(__git_prompt__)"
-			#printf ""${BBLU:-}"%s"${BCYN:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
-		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+			if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
+			printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 			git -C "${_dir}" status -s
 			__find_trailing_whitespace_l__
-		fi
-	done
+			fi
+		done
 }
 
 function __local_cleanup__ {
