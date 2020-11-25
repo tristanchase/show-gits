@@ -189,10 +189,10 @@ fi
 
 # Bash settings
 # Same as set -euE -o pipefail
-set -o errexit
+#set -o errexit
 set -o nounset
 set -o errtrace
-set -o pipefail
+#set -o pipefail
 IFS=$'\n\t'
 
 # Main Script Wrapper
