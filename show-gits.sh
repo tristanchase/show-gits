@@ -152,13 +152,17 @@ function __local_cleanup__ {
 }
 
 # Source helper functions
-if [[ -e ~/.functions.sh ]]; then
-	source ~/.functions.sh
-fi
+for _helper_file in functions colors git-prompt; do
+	if [[ ! -e "${HOME}"/."${_helper_file}".sh ]]; then
+		printf "%b\n" "Downloading missing script file "${_helper_file}".sh..."
+		sleep 1
+		wget -nv -P "${HOME}" https://raw.githubusercontent.com/tristanchase/dotfiles/master/"${_helper_file}".sh
+		mv "${HOME}"/"${_helper_file}".sh "${HOME}"/."${_helper_file}".sh
+	fi
+done
 
-if [[ -e "${HOME}"/.git-prompt.sh ]]; then
-	source ~/.git-prompt.sh
-fi
+source "${HOME}"/.functions.sh
+source "${HOME}"/.git-prompt.sh
 
 # Get some basic options
 # TODO Make this more robust
