@@ -5,7 +5,7 @@ fi
 
 # Create temp file for output of find
 # TODO Use array only?
-_dirfile="${HOME}"/tmp/show-gits.$$.tempfile
+_dirfile=${HOME}/tmp/show-gits.$$.tempfile
 touch ${_dirfile}
 
 # Save current directory

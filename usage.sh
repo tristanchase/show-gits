@@ -1,6 +1,6 @@
 
 #//Usage: show-gits [ {-d|--debug} ] [ {-f|--full} {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} ]
-#//Description: Show the git repositories in your "${HOME}" folder
+#//Description: Show the git repositories in your ${HOME} folder
 #//Examples: show-gits --update; show-gits -l
 #//Options:
 #//	-d --debug	Enable debug mode

@@ -2,7 +2,7 @@
 
 #-----------------------------------
 #//Usage: show-gits [ {-d|--debug} ] [ {-f|--full} {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} ]
-#//Description: Show the git repositories in your "${HOME}" folder
+#//Description: Show the git repositories in your ${HOME} folder
 #//Examples: show-gits --update; show-gits -l
 #//Options:
 #//	-d --debug	Enable debug mode
@@ -35,7 +35,7 @@
 
 # Initialize variables
 #_temp="file.$$"
-_dirfile=""${HOME}"/tmp/show-gits.$$.tempfile"
+_dirfile="${HOME}/tmp/show-gits.$$.tempfile"
 
 # List of temp files to clean up on exit (put last)
 _tempfiles=("${_dirfile}")
@@ -51,9 +51,9 @@ function __main_script__ {
 	# Save current directory
 	_startdir="$(pwd)"
 
-	# Find the git repos in the "${HOME}" directory (but exclude ~/.cache/)
-	printf "%b\n" "${HOME}"/**/.git | sed 's/\/\.git//g' > "${_dirfile}"
-	printf '%b\n' "${HOME}"/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> "${_dirfile}"
+	# Find the git repos in the ${HOME} directory (but exclude ~/.cache/)
+	printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > "${_dirfile}"
+	printf '%b\n' ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> "${_dirfile}"
 
 
 	# Runtime
@@ -153,16 +153,16 @@ function __local_cleanup__ {
 
 # Source helper functions
 for _helper_file in functions colors git-prompt; do
-	if [[ ! -e "${HOME}"/."${_helper_file}".sh ]]; then
+	if [[ ! -e ${HOME}/."${_helper_file}".sh ]]; then
 		printf "%b\n" "Downloading missing script file "${_helper_file}".sh..."
 		sleep 1
-		wget -nv -P "${HOME}" https://raw.githubusercontent.com/tristanchase/dotfiles/master/"${_helper_file}".sh
-		mv "${HOME}"/"${_helper_file}".sh "${HOME}"/."${_helper_file}".sh
+		wget -nv -P ${HOME} https://raw.githubusercontent.com/tristanchase/dotfiles/master/"${_helper_file}".sh
+		mv ${HOME}/"${_helper_file}".sh ${HOME}/."${_helper_file}".sh
 	fi
 done
 
-source "${HOME}"/.functions.sh
-source "${HOME}"/.git-prompt.sh
+source ${HOME}/.functions.sh
+source ${HOME}/.git-prompt.sh
 
 # Get some basic options
 # TODO Make this more robust
