@@ -20,11 +20,10 @@
 
 #-----------------------------------
 # TODO Section
-# * Add warning if sourced files are missing
 # * Replace _dirfile tempfile with array
 
 # DONE
-# + Replace old color variables with new ones
+# + Add warning if sourced files are missing
 
 #-----------------------------------
 # License Section
@@ -144,7 +143,7 @@ function __get_short_status__ {
 			git -C "${_dir}" status -s
 			__find_trailing_whitespace_l__
 		fi
-		done
+	done
 }
 
 function __local_cleanup__ {
