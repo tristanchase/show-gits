@@ -135,6 +135,7 @@ function __get_full_status__ {
 }
 
 # Get the short status of the repos (-s|--status)
+# TODO Add chooser to output
 function __get_short_status__ {
 	for _dir in $(cat "${_dirfile}"); do
 		cd "${_dir}"
