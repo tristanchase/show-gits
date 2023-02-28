@@ -106,7 +106,7 @@ function __get_list_short__ {
 		cd "${_dir}"
 		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 		git -C "${_dir}" status -s
-		__find_trailing_whitespace_l__
+		#__find_trailing_whitespace_l__
 	done
 }
 
@@ -129,7 +129,7 @@ function __get_full_status__ {
 		cd "${_dir}"
 		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 		git -C "${_dir}" status
-		__find_trailing_whitespace_l__
+		#__find_trailing_whitespace_l__
 		printf "%b\n" ""
 	done
 }
@@ -141,7 +141,7 @@ function __get_short_status__ {
 		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
 			printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 			git -C "${_dir}" status -s
-			__find_trailing_whitespace_l__
+			#__find_trailing_whitespace_l__
 		fi
 	done
 }
@@ -155,7 +155,7 @@ for _helper_file in functions colors git-prompt; do
 	if [[ ! -e ${HOME}/."${_helper_file}".sh ]]; then
 		printf "%b\n" "Downloading missing script file "${_helper_file}".sh..."
 		sleep 1
-		wget -nv -P ${HOME} https://raw.githubusercontent.com/tristanchase/dotfiles/master/"${_helper_file}".sh
+		wget -nv -P ${HOME} https://raw.githubusercontent.com/tristanchase/dotfiles/main/"${_helper_file}".sh
 		mv ${HOME}/"${_helper_file}".sh ${HOME}/."${_helper_file}".sh
 	fi
 done
