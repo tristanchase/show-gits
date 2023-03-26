@@ -52,7 +52,7 @@ function __main_script__ {
 
 	# Find the git repos in the ${HOME} directory (but exclude ~/.cache/)
 	printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > "${_dirfile}"
-	printf '%b\n' ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> "${_dirfile}"
+	printf "%b\n" ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> "${_dirfile}"
 
 
 	# Runtime
@@ -112,7 +112,9 @@ function __get_list_short__ {
 
 # Show the repos (-l|--list)
 function __show_repos__ {
-	printf ""${bold_blue:-}"%s\n"${reset:-}"" "$(cat "${_dirfile}")"
+	for _dir in $(cat "${_dirfile}"); do
+		printf ""${bold_blue:-}"%s\n"${reset:-}"" "${_dir}"
+	done
 }
 
 # Update the repos from remote (-u|--update)
@@ -165,19 +167,18 @@ source ${HOME}/.git-prompt.sh
 
 # Get some basic options
 # TODO Make this more robust
-if [[ "${1:-}" =~ (-d|--debug) ]]; then
-	__debugger__
-elif [[ "${1:-}" =~ (-h|--help) ]]; then
-	__usage__
-elif [[ "${1:-}" =~ (-u|--update) ]]; then
-	_fetch_remotes_yN="y"
-elif [[ "${1:-}" =~ (-s|--status) ]]; then
-	_get_short_status_yN="y"
-elif [[ "${1:-}" =~ (-l|--list) ]]; then
-	_show_repos__yN="y"
-elif [[ "${1:-}" =~ (-f|--full) ]]; then
-	_get_full_status__yN="y"
-fi
+shopt -s extglob
+case "${1:-}" in
+	(-d|--debug|d?(e?(b?(u?(g))))) __debugger__ ;;
+	(-h|--help|h?(e?(l?(p)))) __usage__ ;;
+	(-u|--update|upd?(a?(t?(e)))) _fetch_remotes_yN="y" ;;
+	(-s|--status|s?(t?(a?(t?(u?(s)))))) _get_short_status_yN="y" ;;
+	(-l|--list|l?(i?(s?(t)))) _show_repos__yN="y" ;;
+	(-f|--full|f?(u?(l?(l)))) _get_full_status__yN="y" ;;
+	('') ;; # Default behavio[u]r
+	(*) printf "%b\n" "Option \""${1:-}"\" not recognized." ; __usage__ ;;
+esac
+shopt -u extglob
 
 # Bash settings
 # Same as set -euE -o pipefail
