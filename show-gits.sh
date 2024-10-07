@@ -61,11 +61,11 @@ function __main_script__ {
 	elif [[ "${_get_short_status_yN:-}" = "y" ]];then
 		__get_short_status__
 	elif [[ "${_show_repos__yN:-}" = "y" ]];then
-		__show_repos__ | more
+		__show_repos__ | more -e
 	elif [[ "${_get_full_status__yN:-}" = "y" ]];then
 		__get_full_status__ | less -RFM +Gg
 	else
-		__get_list_short__ | more
+		__get_list_short__ | more -e
 	fi
 	# End runtime
 
