@@ -21,6 +21,9 @@
 #-----------------------------------
 # TODO Section
 # * Replace _dirfile tempfile with array
+# * Refactor runtime
+# * Feature add chooser
+# * Feature upgrade repos
 
 # DONE
 # + Add warning if sourced files are missing
