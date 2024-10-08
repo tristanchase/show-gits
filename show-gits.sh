@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 #-----------------------------------
-#//Usage: show-gits [ {-d|--debug} ] [ {-f|--full} {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} ]
+#//Usage: show-gits [ {-d|--debug} ] [ {-f|--full} {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} {-U|--upgrade} ]
 #//Description: Show the git repositories in your ${HOME} folder
 #//Examples: show-gits --update; show-gits -l
 #//Options:
@@ -11,6 +11,7 @@
 #//	-l --list	Show the repos
 #//	-s --status	Get the short status of the repos
 #//	-u --update	Update the repos from remote
+#//	-U --upgrade	Upgrade the repos from remote (git pull)
 
 # Created: 2018-03-22
 # Tristan M. Chase <tristan.m.chase@gmail.com>
@@ -58,6 +59,8 @@ function __main_script__ {
 	# Runtime
 	if [[ "${_fetch_remotes_yN:-}" = "y" ]];then
 		__fetch_remotes__
+	elif [[ "${_upgrade_repos_yN:-}" = "y" ]];then
+		__upgrade_repos__
 	elif [[ "${_get_short_status_yN:-}" = "y" ]];then
 		__get_short_status__
 	elif [[ "${_show_repos__yN:-}" = "y" ]];then
@@ -148,6 +151,42 @@ function __get_short_status__ {
 	done
 }
 
+function __upgrade_repos__ {
+	# Get list of repos
+	# Find repos that can be upgraded via git pull
+	_upgrade_list=(
+	       	$(for _dir in $(cat "${_dirfile}"); do
+			cd "${_dir}"
+			if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[<]')" ]]; then
+				printf "%s\n" "${_dir}"
+			fi
+		done)
+	)
+
+	if [[ -z "${_upgrade_list[@]}" ]]; then
+		exit 0
+	fi
+
+	# Present list of candidates for upgrade
+	printf "%b\n" "The following "${#_upgrade_list[@]}" repos can be upgraded (git pull):"
+	printf "%s\n" "${_upgrade_list[@]}"
+	printf "%b" "Would you like to upgrade them (y/N)? "
+	read _upgrade_yN
+
+	# Allow user to choose one, many, or all from the list
+	# (Add chooser here)
+
+	# Upgrade repos
+	if [[ "${_upgrade_yN}" =~ (y|Y) ]]; then
+		for _repo in "${_upgrade_list[@]}"; do
+			cd "${_repo}"
+			git pull
+		done
+	fi
+	exit 0
+
+}
+
 function __local_cleanup__ {
 	:
 }
@@ -175,6 +214,7 @@ case "${1:-}" in
 	(-s|--status|s?(t?(a?(t?(u?(s)))))) _get_short_status_yN="y" ;;
 	(-l|--list|l?(i?(s?(t)))) _show_repos__yN="y" ;;
 	(-f|--full|f?(u?(l?(l)))) _get_full_status__yN="y" ;;
+	(-U|--upgrade|upg?(r?(a?(d?(e))))) _upgrade_repos_yN="y" ;;
 	('') ;; # Default behavio[u]r
 	(*) printf "%b\n" "Option \""${1:-}"\" not recognized." ; __usage__ ;;
 esac
