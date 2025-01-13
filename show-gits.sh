@@ -24,10 +24,10 @@
 # * Replace _dirfile tempfile with array
 # * Refactor runtime
 # * Feature add chooser
-# * Feature upgrade repos
 
 # DONE
 # + Add warning if sourced files are missing
+# + Feature upgrade repos
 
 #-----------------------------------
 # License Section
@@ -154,8 +154,10 @@ function __get_short_status__ {
 	done
 }
 
+# Upgrade the repos from remote (-U|--upgrade)
 function __upgrade_repos__ {
-	# Get list of repos
+	# Update the repos from remote
+	__fetch_remotes__
 	# Find repos that can be upgraded via git pull
 	_upgrade_list=(
 	       	$(for _dir in $(cat "${_dirfile}"); do
@@ -171,6 +173,7 @@ function __upgrade_repos__ {
 	fi
 
 	# Present list of candidates for upgrade
+	printf "%b\n"
 	printf "%b\n" "The following "${#_upgrade_list[@]}" repos can be upgraded (git pull):"
 	printf "%s\n" "${_upgrade_list[@]}"
 	printf "%b" "Would you like to upgrade them (y/N)? "
