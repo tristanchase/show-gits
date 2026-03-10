@@ -169,14 +169,24 @@ function __upgrade_repos__ {
 	)
 
 	if [[ -z "${_upgrade_list[@]}" ]]; then
+		printf "%b\n" "Repos are up to date."
 		exit 0
+	fi
+
+	_file_count="${#_update_list[@]}"
+	if [[ "${_file_count}" -gt 1 ]]; then
+		_file_noun="repos"
+		_file_obj="them"
+	else
+		_file_noun="repo"
+		_file_obj="it"
 	fi
 
 	# Present list of candidates for upgrade
 	printf "%b\n"
-	printf "%b\n" "The following "${#_upgrade_list[@]}" repos can be upgraded (git pull):"
-	printf "%s\n" "${_upgrade_list[@]}"
-	printf "%b" "Would you like to upgrade them (y/N)? "
+	printf "%b\n" "The following "${_file_noun}" can be upgraded (git pull):"
+	printf "  %s\n" "${_upgrade_list[@]}"
+	printf "%b" "Would you like to upgrade "${_file_obj}" (y/N)? "
 	read _upgrade_yN
 
 	# Allow user to choose one, many, or all from the list
