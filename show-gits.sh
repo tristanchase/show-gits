@@ -173,7 +173,7 @@ function __upgrade_repos__ {
 		exit 0
 	fi
 
-	_file_count="${#_update_list[@]}"
+	_file_count="${#_upgrade_list[@]}"
 	if [[ "${_file_count}" -gt 1 ]]; then
 		_file_noun="repos"
 		_file_obj="them"
