@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 #-----------------------------------
-#//Usage: show-gits [ {-d|--debug} ] [ {-f|--full} {-h|--help} | {-l|--list} | {-u|--update} | {-s|--status} {-U|--upgrade} ]
+#//Usage: show-gits [ {-d|[--]d[ebug]} ] [ {-f|[--]f[ull]} | {-h|[--]h[elp]} | {-l|[--]l[ist]} | {-s|[--]s[tatus]} | {-u|[--]upd[ate]} | {-U|[--]upg[rade]} ]
 #//Description: Show the git repositories in your ${HOME} folder
-#//Examples: show-gits --update; show-gits -l
+#//Examples: show-gits -u; show-gits --update; show-gits upd
 #//Options:
-#//	-d --debug	Enable debug mode
-#//	-f --full	Show full report of the repos
-#//	-h --help	Display this help message
-#//	-l --list	Show the repos
-#//	-s --status	Get the short status of the repos
-#//	-u --update	Update the repos from remote
-#//	-U --upgrade	Upgrade the repos from remote (git pull)
+#//	-d [--]d[ebug]	  Enable debug mode
+#//	-f [--]f[ull]	  Show full report of the repos
+#//	-h [--]h[elp]	  Display this help message
+#//	-l [--]l[ist]	  List the repos (without status)
+#//	-s [--]s[tatus]	  Get the short status of the repos
+#//	-u [--]upd[ate]	  Update the repos from remote
+#//	-U [--]upg[rade]  Upgrade the repos from remote (git pull)
 
 # Created: 2018-03-22
 # Tristan M. Chase <tristan.m.chase@gmail.com>
