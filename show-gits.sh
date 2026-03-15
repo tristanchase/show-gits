@@ -224,13 +224,13 @@ source ${HOME}/.git-prompt.sh
 # TODO Make this more robust
 shopt -s extglob
 case "${1:-}" in
-	(-d|--debug|d?(e?(b?(u?(g))))) __debugger__ ;;
-	(-h|--help|h?(e?(l?(p)))) __usage__ ;;
-	(-u|--update|upd?(a?(t?(e)))) _fetch_remotes_yN="y" ;;
-	(-s|--status|s?(t?(a?(t?(u?(s)))))) _get_short_status_yN="y" ;;
-	(-l|--list|l?(i?(s?(t)))) _show_repos__yN="y" ;;
-	(-f|--full|f?(u?(l?(l)))) _get_full_status__yN="y" ;;
-	(-U|--upgrade|upg?(r?(a?(d?(e))))) _upgrade_repos_yN="y" ;;
+	(-d|?(--)d?(e?(b?(u?(g))))) __debugger__ ;;
+	(-h|?(--)h?(e?(l?(p)))) __usage__ ;;
+	(-u|?(--)upd?(a?(t?(e)))) _fetch_remotes_yN="y" ;;
+	(-s|?(--)s?(t?(a?(t?(u?(s)))))) _get_short_status_yN="y" ;;
+	(-l|?(--)l?(i?(s?(t)))) _show_repos__yN="y" ;;
+	(-f|?(--)f?(u?(l?(l)))) _get_full_status__yN="y" ;;
+	(-U|?(--)upg?(r?(a?(d?(e))))) _upgrade_repos_yN="y" ;;
 	('') ;; # Default behavio[u]r
 	(*) printf "%b\n" "Option \""${1:-}"\" not recognized." ; __usage__ ;;
 esac
