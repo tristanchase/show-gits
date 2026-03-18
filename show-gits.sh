@@ -196,7 +196,9 @@ function __upgrade_repos__ {
 	if [[ "${_upgrade_yN}" =~ (y|Y) ]]; then
 		for _repo in "${_upgrade_list[@]}"; do
 			cd "${_repo}"
+			printf "%b\n" "Upgrading ${_repo}"
 			git pull
+			printf "%b\n"
 		done
 	fi
 	exit 0
