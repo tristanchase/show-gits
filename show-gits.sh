@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+_script_name=$(basename -s .sh "$0")
 #-----------------------------------
 #//Usage: show-gits [ {-d|[--]d[ebug]} ] [ {-f|[--]f[ull]} | {-h|[--]h[elp]} | {-l|[--]l[ist]} | {-s|[--]s[tatus]} | {-u|[--]upd[ate]} | {-U|[--]upg[rade]} ]
 #//Description: Show the git repositories in your ${HOME} folder
