@@ -21,14 +21,16 @@ _script_name=$(basename -s .sh "$0")
 #  git
 
 #-----------------------------------
-# TODO Section
-# * Replace _dirfile tempfile with array
-# * Refactor runtime
-# * Feature add chooser
-
-# DONE
-# + Add warning if sourced files are missing
-# + Feature upgrade repos
+# TODO Section (see ~/devel/conventional-commits/TODO for details)
+# - [x] feat: add warning if sourced files are missing (feat-warning)
+# - [x] feat: add upgrade repos function (feat-upgrade-repos)
+# - [ ] refactor: rewrite git search (refactor-git-search)
+# - [ ] refactor: replace _dirfile tempfile with array (refactor-array)
+# - [ ] refactor: refactor options (refactor-options)
+# - [ ] refactor: remove runtime (refactor-runtime)
+# - [ ] feat: add __chooser__ (feat-chooser)
+# - [ ] perf: [flesh this out: use coproc?] (perf-?)
+# - [ ] refactor: rewrite options using getopt (refactor-options-getopt)
 
 #-----------------------------------
 # License Section
@@ -49,18 +51,20 @@ function __main_script__ {
 	__globstar__
 
 	# Create temp file for output of find
-	# TODO Use array only?
+	# TODO Use array only? (refactor-array)
 	touch "${_dirfile}"
 
 	# Save current directory
 	_startdir="$(pwd)"
 
 	# Find the git repos in the ${HOME} directory (but exclude ~/.cache/)
+	# TODO Refactor this (look to pathfinder) (refactor-git-search)
 	printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > "${_dirfile}"
 	printf "%b\n" ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> "${_dirfile}"
 
 
 	# Runtime
+	# TODO Ditch this: refactor Options (refactor-runtime)
 	if [[ "${_fetch_remotes_yN:-}" = "y" ]];then
 		__fetch_remotes__
 	elif [[ "${_upgrade_repos_yN:-}" = "y" ]];then
@@ -170,7 +174,7 @@ function __upgrade_repos__ {
 	)
 
 	if [[ -z "${_upgrade_list[@]}" ]]; then
-		printf "%b\n" "Repos are up to date."
+		printf "%b\n" ""${_script_name}": Repos are up to date."
 		exit 0
 	fi
 
@@ -191,7 +195,7 @@ function __upgrade_repos__ {
 	read _upgrade_yN
 
 	# Allow user to choose one, many, or all from the list
-	# (Add chooser here)
+	# TODO Add chooser here (feat-chooser)
 
 	# Upgrade repos
 	if [[ "${_upgrade_yN}" =~ (y|Y) ]]; then
@@ -224,7 +228,8 @@ source ${HOME}/.functions.sh
 source ${HOME}/.git-prompt.sh
 
 # Get some basic options
-# TODO Make this more robust
+# TODO Make this more robust (use getopt? I kinda like the vim-like style) (refactor-options-getopt)
+# TODO Refactor this (refactor-options)
 shopt -s extglob
 case "${1:-}" in
 	(-d|?(--)d?(e?(b?(u?(g))))) __debugger__ ;;
