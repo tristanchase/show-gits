@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 
 _script_name=$(basename -s .sh "$0")
+
+# Same as set -euE -o pipefail
+#set -o errexit
+set -o nounset
+set -o errtrace
+#set -o pipefail
+IFS=$'\n\t'
+
+
+shopt -s globstar
+shopt -s dotglob
+shopt -s extglob
+
 #-----------------------------------
 #//Usage: show-gits [ {-d|[--]d[ebug]} ] [ {-f|[--]f[ull]} | {-h|[--]h[elp]} | {-l|[--]l[ist]} | {-s|[--]s[tatus]} | {-u|[--]upd[ate]} | {-U|[--]upg[rade]} ]
 #//Description: Show the git repositories in your ${HOME} folder
@@ -26,8 +39,8 @@ _script_name=$(basename -s .sh "$0")
 # - [x] feat: add upgrade repos function (feat-upgrade-repos)
 # - [ ] refactor: rewrite git search (refactor-git-search)
 # - [ ] refactor: replace _dirfile tempfile with array (refactor-array)
-# - [ ] refactor: refactor options (refactor-options)
-# - [ ] refactor: remove runtime (refactor-runtime)
+# - [x] refactor: refactor options (refactor-options)
+# - [x] refactor: remove runtime (refactor-runtime)
 # - [ ] feat: add __chooser__ (feat-chooser)
 # - [ ] perf: [flesh this out: use coproc?] (perf-?)
 # - [ ] refactor: rewrite options using getopt (refactor-options-getopt)
@@ -41,48 +54,15 @@ _script_name=$(basename -s .sh "$0")
 
 # Initialize variables
 #_temp="file.$$"
-_dirfile="${HOME}/tmp/show-gits.$$.tempfile"
+# TODO Use array only? (refactor-array)
+_dirfile="${HOME}/tmp/show-gits.$$.tempfile" && touch "${_dirfile}"
 
 # List of temp files to clean up on exit (put last)
 _tempfiles=("${_dirfile}")
 
-# Put main script here
+## Put main script here
 function __main_script__ {
-	__globstar__
-
-	# Create temp file for output of find
-	# TODO Use array only? (refactor-array)
-	touch "${_dirfile}"
-
-	# Save current directory
-	_startdir="$(pwd)"
-
-	# Find the git repos in the ${HOME} directory (but exclude ~/.cache/)
-	# TODO Refactor this (look to pathfinder) (refactor-git-search)
-	printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > "${_dirfile}"
-	printf "%b\n" ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> "${_dirfile}"
-
-
-	# Runtime
-	# TODO Ditch this: refactor Options (refactor-runtime)
-	if [[ "${_fetch_remotes_yN:-}" = "y" ]];then
-		__fetch_remotes__
-	elif [[ "${_upgrade_repos_yN:-}" = "y" ]];then
-		__upgrade_repos__
-	elif [[ "${_get_short_status_yN:-}" = "y" ]];then
-		__get_short_status__
-	elif [[ "${_show_repos__yN:-}" = "y" ]];then
-		__show_repos__ | more -e
-	elif [[ "${_get_full_status__yN:-}" = "y" ]];then
-		__get_full_status__ | less -RFM +Gg
-	else
-		__get_list_short__ | more -e
-	fi
-	# End runtime
-
-	# Return to the starting directory
-	cd "${_startdir}"
-
+	:
 } #end __main_script__
 
 # Local functions
@@ -111,8 +91,16 @@ function __git_prompt__ {
 	printf "$(__git_ps1__)"
 }
 
+# Find the git repos in the ${HOME} directory (but exclude ~/.cache/)
+function __git_search__ {
+# TODO Refactor this (look to pathfinder) (refactor-git-search)
+	printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > "${_dirfile}"
+	printf "%b\n" ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> "${_dirfile}"
+}
+
 # Get a list of the repos with the short status (default)
 function __get_list_short__ {
+	__git_search__
 	for _dir in $(cat "${_dirfile}"); do
 		cd "${_dir}"
 		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
@@ -123,13 +111,16 @@ function __get_list_short__ {
 
 # Show the repos (-l|--list)
 function __show_repos__ {
+	__git_search__
 	for _dir in $(cat "${_dirfile}"); do
 		printf ""${bold_blue:-}"%s\n"${reset:-}"" "${_dir}"
 	done
 }
 
 # Update the repos from remote (-u|--update)
-function __fetch_remotes__ {
+#function __fetch_remotes__ {
+function __update_repos__ {
+	__git_search__
 	for _dir in $(cat "${_dirfile}"); do
 		printf "%b\n" "${_dir}"
 		git -C "${_dir}" remote update
@@ -138,6 +129,7 @@ function __fetch_remotes__ {
 
 # Get the full status of the repos (-f|--full)
 function __get_full_status__ {
+	__git_search__
 	for _dir in $(cat "${_dirfile}"); do
 		cd "${_dir}"
 		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
@@ -149,6 +141,7 @@ function __get_full_status__ {
 
 # Get the short status of the repos (-s|--status)
 function __get_short_status__ {
+	__git_search__
 	for _dir in $(cat "${_dirfile}"); do
 		cd "${_dir}"
 		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
@@ -162,7 +155,7 @@ function __get_short_status__ {
 # Upgrade the repos from remote (-U|--upgrade)
 function __upgrade_repos__ {
 	# Update the repos from remote
-	__fetch_remotes__
+	__update_repos__ #__fetch_remotes__
 	# Find repos that can be upgraded via git pull
 	_upgrade_list=(
 	       	$(for _dir in $(cat "${_dirfile}"); do
@@ -230,27 +223,17 @@ source ${HOME}/.git-prompt.sh
 # Get some basic options
 # TODO Make this more robust (use getopt? I kinda like the vim-like style) (refactor-options-getopt)
 # TODO Refactor this (refactor-options)
-shopt -s extglob
 case "${1:-}" in
 	(-d|?(--)d?(e?(b?(u?(g))))) __debugger__ ;;
 	(-h|?(--)h?(e?(l?(p)))) __usage__ ;;
-	(-u|?(--)upd?(a?(t?(e)))) _fetch_remotes_yN="y" ;;
-	(-s|?(--)s?(t?(a?(t?(u?(s)))))) _get_short_status_yN="y" ;;
-	(-l|?(--)l?(i?(s?(t)))) _show_repos__yN="y" ;;
-	(-f|?(--)f?(u?(l?(l)))) _get_full_status__yN="y" ;;
-	(-U|?(--)upg?(r?(a?(d?(e))))) _upgrade_repos_yN="y" ;;
-	('') ;; # Default behavio[u]r
+	(-u|?(--)upd?(a?(t?(e)))) __update_repos__ ;; #__fetch_remotes__ ;;
+	(-s|?(--)s?(t?(a?(t?(u?(s)))))) __get_short_status__ ;;
+	(-l|?(--)l?(i?(s?(t)))) __show_repos__ | more -e ;;
+	(-f|?(--)f?(u?(l?(l))))  __get_full_status__ | less -RFM +Gg ;;
+	(-U|?(--)upg?(r?(a?(d?(e))))) __upgrade_repos__ ;;
+	('') __get_list_short__ | more -e;; # Default behavio[u]r
 	(*) printf "%b\n" "Option \""${1:-}"\" not recognized." ; __usage__ ;;
 esac
-shopt -u extglob
-
-# Bash settings
-# Same as set -euE -o pipefail
-#set -o errexit
-set -o nounset
-set -o errtrace
-#set -o pipefail
-IFS=$'\n\t'
 
 # Main Script Wrapper
 if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
