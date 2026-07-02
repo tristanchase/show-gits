@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-_script_name=$(basename -s .sh "$0")
-
 # Same as set -euE -o pipefail
 #set -o errexit
 set -o nounset
@@ -13,6 +11,8 @@ IFS=$'\n\t'
 shopt -s globstar
 shopt -s dotglob
 shopt -s extglob
+
+_script_name=$(basename -s .sh "$0")
 
 #-----------------------------------
 #//Usage: show-gits [ {-d|[--]d[ebug]} ] [ {-f|[--]f[ull]} | {-h|[--]h[elp]} | {-l|[--]l[ist]} | {-s|[--]s[tatus]} | {-u|[--]upd[ate]} | {-U|[--]upg[rade]} ]
@@ -228,7 +228,7 @@ source ${HOME}/.git-prompt.sh
 
 # Get some basic options
 # TODO Make this more robust (use getopt? I kinda like the vim-like style) (refactor-options-getopt)
-# TODO Refactor this (refactor-options)
+# refactor: rewrite options using getopt (refactor-options-getopt)
 case "${1:-}" in
 	(-d|?(--)d?(e?(b?(u?(g))))) __debugger__ ;;
 	(-h|?(--)h?(e?(l?(p)))) __usage__ ;;
