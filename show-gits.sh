@@ -45,7 +45,7 @@ _script_name=$(basename -s .sh "$0")
 # - [ ] refactor: replace _dirfile tempfile with array (refactor-array)
 # - [ ] feat: add __chooser__ (feat-chooser)
 # - [ ] feat: add timestamp option (feat-timestamp)
-# - [ ] perf: [flesh this out: use coproc?] (perf-?)
+# - [ ] perf: [flesh this out: use coproc?] (perf-update-repos)
 # - [ ] refactor: rewrite options using getopt (refactor-options-getopt)
 
 #-----------------------------------
@@ -112,6 +112,7 @@ function __show_repos__ {
 
 # Update the repos from remote (-u|--update)
 #function __fetch_remotes__ {
+# TODO (perf-update-repos) This is slow. Rewrite with coproc?
 function __update_repos__ {
 	__git_search__
 	for _dir in $(cat "${_dirfile}"); do
