@@ -39,12 +39,13 @@ _script_name=$(basename -s .sh "$0")
 # - [x] feat: add upgrade repos function (feat-upgrade-repos)
 # - [x] refactor: refactor options (refactor-options)
 # - [x] refactor: remove runtime (refactor-runtime)
+# - [x] refactor: remove __find_trailing_whitespace__ (refactor-remove-ws)
+# - [x] refactor: remove __find_trailing_whitespace_l__ (refactor-remove-ws)
 # - [ ] refactor: rewrite git search (refactor-git-search)
 # - [ ] refactor: replace _dirfile tempfile with array (refactor-array)
 # - [ ] feat: add __chooser__ (feat-chooser)
+# - [ ] feat: add timestamp option (feat-timestamp)
 # - [ ] perf: [flesh this out: use coproc?] (perf-?)
-# - [ ] refactor: remove __find_trailing_whitespace__ (refactor-remove-ws)
-# - [ ] refactor: remove __find_trailing_whitespace_l__ (refactor-remove-ws)
 # - [ ] refactor: rewrite options using getopt (refactor-options-getopt)
 
 #-----------------------------------
@@ -68,16 +69,6 @@ function __main_script__ {
 } #end __main_script__
 
 # Local functions
-
-# TODO (refactor-remove-ws)
-# Find files with trailing whitespace (but not .pdf's or other binary files)
-function __find_trailing_whitespace_l__ {
-	if [[ -n "$(grep --files-with-matches --binary-files=without-match '\s$' 2>/dev/null "${_dir}"/*)" ]]; then
-		printf "${WHT:-}${CYNB:-}%s\n" ">>>These files have trailing whitespace:"
-		grep --files-with-matches --binary-files=without-match '\s$' 2>/dev/null "${_dir}"/* | xargs realpath
-		printf ""${reset:-}"%b\n"
-	fi
-}
 
 # Show git status à la git-prompt.sh
 function __git_ps1__ {
@@ -108,8 +99,6 @@ function __get_list_short__ {
 		cd "${_dir}"
 		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 		git -C "${_dir}" status -s
-# TODO (refactor-remove-ws)
-		#__find_trailing_whitespace_l__
 	done
 }
 
@@ -138,8 +127,6 @@ function __get_full_status__ {
 		cd "${_dir}"
 		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 		git -C "${_dir}" status
-# TODO (refactor-remove-ws)
-		#__find_trailing_whitespace_l__
 		printf "%b\n" ""
 	done
 }
@@ -152,8 +139,6 @@ function __get_short_status__ {
 		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
 			printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
 			git -C "${_dir}" status -s
-# TODO (refactor-remove-ws)
-			#__find_trailing_whitespace_l__
 		fi
 	done
 }
