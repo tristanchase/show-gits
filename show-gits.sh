@@ -2,11 +2,10 @@
 
 # Same as set -euE -o pipefail
 #set -o errexit
-set -o nounset
-set -o errtrace
+#set -o nounset
+#set -o errtrace
 #set -o pipefail
 IFS=$'\n\t'
-
 
 shopt -s globstar
 shopt -s dotglob
@@ -15,17 +14,30 @@ shopt -s extglob
 _script_name=$(basename -s .sh "$0")
 
 #-----------------------------------
-#//Usage: show-gits [ {-d|[--]d[ebug]} ] [ {-f|[--]f[ull]} | {-h|[--]h[elp]} | {-l|[--]l[ist]} | {-s|[--]s[tatus]} | {-u|[--]upd[ate]} | {-U|[--]upg[rade]} ]
-#//Description: Show the git repositories in your ${HOME} folder
-#//Examples: show-gits -u; show-gits --update; show-gits upd
-#//Options:
-#//	-d [--]d[ebug]	  Enable debug mode
-#//	-f [--]f[ull]	  Show full report of the repos
-#//	-h [--]h[elp]	  Display this help message
-#//	-l [--]l[ist]	  List the repos (without status)
-#//	-s [--]s[tatus]	  Get the short status of the repos
-#//	-u [--]upd[ate]	  Update the repos from remote
-#//	-U [--]upg[rade]  Upgrade the repos from remote (git pull)
+function __show_help__ {
+	cat << EOF
+Usage: ${_script_name} [OPTIONS]
+
+Description: Show the git repositories in your ${HOME} folder
+
+Options:
+  -d, [--]d[ebug]	Enable debug mode
+  -f, [--]f[ull]	Show full report of the repos
+  -h, [--]h[elp]	Display this help message
+  -l, [--]l[ist]	List the repos (without status)
+  -s, [--]s[tatus]	List the repos with short status
+  -u, [--]upd[ate]	Update the repos from remote
+  -U, [--]upg[rade]	Upgrade the repos from remote (git pull)
+
+Examples:
+  ${_script_name} -u
+  ${_script_name} --update
+  ${_script_name} upd
+EOF
+
+exit 2
+}
+
 
 # Created: 2018-03-22
 # Tristan M. Chase <tristan.m.chase@gmail.com>
@@ -41,11 +53,11 @@ _script_name=$(basename -s .sh "$0")
 # - [x] refactor: remove runtime (refactor-runtime)
 # - [x] refactor: remove __find_trailing_whitespace__ (refactor-remove-ws)
 # - [x] refactor: remove __find_trailing_whitespace_l__ (refactor-remove-ws)
-# - [ ] refactor: rewrite git search (refactor-git-search)
-# - [ ] refactor: replace _dirfile tempfile with array (refactor-array)
+# - [x] refactor: rewrite git search (refactor-git-search)
+# - [x] refactor: replace _dirfile tempfile with array (refactor-array)
+# - [x] perf: rewrite __update_repos__ (perf-update-repos)
 # - [ ] feat: add __chooser__ (feat-chooser)
 # - [ ] feat: add timestamp option (feat-timestamp)
-# - [ ] perf: [flesh this out: use coproc?] (perf-update-repos)
 # - [ ] refactor: rewrite options using getopt (refactor-options-getopt)
 
 #-----------------------------------
@@ -56,12 +68,11 @@ _script_name=$(basename -s .sh "$0")
 #-----------------------------------
 
 # Initialize variables
-#_temp="file.$$"
-# TODO Use array only? (refactor-array)
-_dirfile="${HOME}/tmp/show-gits.$$.tempfile" && touch "${_dirfile}"
+_arg='.git'
+_git_array=( $(printf "%b\n" $HOME/**/ | grep "${_arg}"/$ | xargs dirname ) )
 
 # List of temp files to clean up on exit (put last)
-_tempfiles=("${_dirfile}")
+#_tempfiles=("${_dirfile}")
 
 ## Put main script here
 function __main_script__ {
@@ -79,66 +90,48 @@ function __git_prompt__ {
 	if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
 		_git_prompt_color="${bold_orange}"
 	else
-		_git_prompt_color="${BCYN}"
+		_git_prompt_color="${bold_cyan}"
 	fi
 
 	printf "$(__git_ps1__)"
 }
 
-# Find the git repos in the ${HOME} directory (but exclude ~/.cache/)
-function __git_search__ {
-# TODO Refactor this (look to pathfinder) (refactor-git-search)
-	printf "%b\n" ${HOME}/**/.git | sed 's/\/\.git//g' > "${_dirfile}"
-	printf "%b\n" ${HOME}/.*/**/.git | grep -Ev '/\.(\.|cache)?/' | sed 's/\/\.git//g' >> "${_dirfile}"
-}
-
-# Get a list of the repos with the short status (default)
-function __get_list_short__ {
-	__git_search__
-	for _dir in $(cat "${_dirfile}"); do
-		cd "${_dir}"
-		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+# Get a list of the repos with the short status (-s|--status)
+function __full_list_short_status__ {
+	for _dir in "${_git_array[@]}"; do
+		printf "%b\n" "${_dir}"
 		git -C "${_dir}" status -s
 	done
 }
 
 # Show the repos (-l|--list)
-function __show_repos__ {
-	__git_search__
-	for _dir in $(cat "${_dirfile}"); do
-		printf ""${bold_blue:-}"%s\n"${reset:-}"" "${_dir}"
+function __list_repos__ {
+	for _dir in "${_git_array[@]}"; do
+		printf "%b\n" "${_dir}"
 	done
 }
 
 # Update the repos from remote (-u|--update)
-#function __fetch_remotes__ {
-# TODO (perf-update-repos) This is slow. Rewrite with coproc?
 function __update_repos__ {
-	__git_search__
-	for _dir in $(cat "${_dirfile}"); do
-		printf "%b\n" "${_dir}"
-		git -C "${_dir}" remote update
-	done
+	printf "%b\n" $HOME/**/ | grep "${_arg}"/$ | xargs dirname \
+	| xargs -P 16 -I {} sh -c ' git -C {} remote update > /dev/null && echo "{}...updated"'
 }
 
 # Get the full status of the repos (-f|--full)
-function __get_full_status__ {
-	__git_search__
-	for _dir in $(cat "${_dirfile}"); do
-		cd "${_dir}"
-		printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+function __full_list_full_status__ {
+	for _dir in "${_git_array[@]}"; do
+		printf "%b\n" "${_dir}"
 		git -C "${_dir}" status
 		printf "%b\n" ""
 	done
 }
 
-# Get the short status of the repos (-s|--status)
-function __get_short_status__ {
-	__git_search__
-	for _dir in $(cat "${_dirfile}"); do
+# Get the short status of the repos (default)
+function __short_list_short_status__ {
+	for _dir in "${_git_array[@]}"; do
 		cd "${_dir}"
 		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
-			printf ""${bold_blue:-}"%s"${_git_prompt_color:-}"%s\n"${reset:-}"" "${_dir}" "$(__git_prompt__)"
+			printf "%b\n" "${_dir}"
 			git -C "${_dir}" status -s
 		fi
 	done
@@ -150,7 +143,7 @@ function __upgrade_repos__ {
 	__update_repos__ #__fetch_remotes__
 	# Find repos that can be upgraded via git pull
 	_upgrade_list=(
-	       	$(for _dir in $(cat "${_dirfile}"); do
+		$(for _dir in "${_git_array[@]}"; do
 			cd "${_dir}"
 			if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[<]')" ]]; then
 				printf "%s\n" "${_dir}"
@@ -217,14 +210,14 @@ source ${HOME}/.git-prompt.sh
 # refactor: rewrite options using getopt (refactor-options-getopt)
 case "${1:-}" in
 	(-d|?(--)d?(e?(b?(u?(g))))) __debugger__ ;;
-	(-h|?(--)h?(e?(l?(p)))) __usage__ ;;
-	(-u|?(--)upd?(a?(t?(e)))) __update_repos__ ;; #__fetch_remotes__ ;;
-	(-s|?(--)s?(t?(a?(t?(u?(s)))))) __get_short_status__ ;;
-	(-l|?(--)l?(i?(s?(t)))) __show_repos__ | more -e ;;
-	(-f|?(--)f?(u?(l?(l))))  __get_full_status__ | less -RFM +Gg ;;
+	(-h|?(--)h?(e?(l?(p)))) __show_help__ ;;
+	(-s|?(--)s?(t?(a?(t?(u?(s)))))) __full_list_short_status__ | __pager__ ;;
+	(-l|?(--)l?(i?(s?(t)))) __list_repos__ | __pager__ ;;
+	(-f|?(--)f?(u?(l?(l))))  __full_list_full_status__ | __pager__ ;;
+	(-u|?(--)upd?(a?(t?(e)))) __update_repos__ ;;
 	(-U|?(--)upg?(r?(a?(d?(e))))) __upgrade_repos__ ;;
-	('') __get_list_short__ | more -e;; # Default behavio[u]r
-	(*) printf "%b\n" "Option \""${1:-}"\" not recognized." ; __usage__ ;;
+	('') __short_list_short_status__ ;; # Default behavio[u]r
+	(*)  printf "%b\n" ""${_script_name}": Option \""${1:-}"\" not recognized."  1>&2 ; __show_help__ ; exit 2  1>&2 ;;
 esac
 
 # Main Script Wrapper
