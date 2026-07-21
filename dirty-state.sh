@@ -7,75 +7,78 @@ shopt -s extglob
 _script_name="dirty-state"
 _arg=".git"
 _git_array=( $(printf "%b\n" $HOME/**/ | grep "${_arg}"/$ | xargs dirname ) )
-_tempfile="$HOME/tmp/"${_script_name}".$(date +%T)"
 _sep=":"
 
-function __git_status__ {
-	#git -C "${_dir}" status --porcelain=v1 | tr '\n' "${_sep}"
+function __git_status_state__ {
 	git -C "${_dir}" status --branch  --porcelain=v2 | tr '\n' "${_sep}"
-	#git -C "${_dir}" status  --show-stash --porcelain=v2 | tr '\n' "${_sep}"
-	#git rev-list --left-right @{upstream}...HEAD
 }
 
-#_state=""
+function __git_state_check__ {
+_state=
 for _dir in "${_git_array[@]}"; do
-	#printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__ | tr '\n' "${_sep}")" >> "${_tempfile}"
-	#printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__ | tr '\n' "${_sep}")" | awk -F "${_sep}" '$2' >> "${_tempfile}"
-	_dirty_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__)" | awk -F "${_sep}" '$6' )
+	_dirty_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_state__)" | awk -F "${_sep}" '$6' )
 
-	#_dirty_out=$( git -C "${dir}" update-index --really-refresh && git diff-index --quiet HEAD -- )
 	if [[ -n "${_dirty_out}" ]]; then
 		_state="dirty"
-		#printf "%b\n" "${_dirty_out}"
 		printf "%b\n" "${_dirty_out}" | awk -F "${_sep}" '{print $1" [files]"}'
 	fi
 done
+}
 
-#if [[ -z "${_state}" ]]; then
-#	printf "%b\n" ""${_script_name}": All working trees are clean."
-#	_state="All working trees are clean."
-#fi
+function __git_status_stash__ {
+	git -C "${_dir}" status  --show-stash --porcelain=v2 | tr '\n' "${_sep}"
+}
 
-#TODO make the next functions work
-#_commits=""
+function __git_stash_check__ {
+_stash=
 for _dir in "${_git_array[@]}"; do
-	#printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__ | tr '\n' "${_sep}")" >> "${_tempfile}"
-	#printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__ | tr '\n' "${_sep}")" | awk -F "${_sep}" '$2' >> "${_tempfile}"
-	_dirty_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__)" | awk -F "${_sep}" '$6' )
+	_stash_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_stash__)" | awk -F "${_sep}" '$2' )
 
-	#_dirty_out=$( git -C "${dir}" update-index --really-refresh && git diff-index --quiet HEAD -- )
-	if [[ -n "${_dirty_out}" ]]; then
-		_state="dirty"
-		#printf "%b\n" "${_dirty_out}"
-		printf "%b\n" "${_dirty_out}" | awk -F "${_sep}" '{print $1" [files]"}'
+	if [[ -n "${_stash_out}" ]]; then
+		_stash="stashed"
+		printf "%b\n" "${_stash_out}" | awk -F "${_sep}" '{print $1" [stash]"}'
 	fi
 done
+}
 
-#if [[ -z "${_state}" ]]; then
-#	printf "%b\n" ""${_script_name}": All working trees are clean."
-#	_state="All working trees are clean."
-#fi
+function __git_status_commits__ {
+	git -C "${_dir}" rev-list --left-right @{upstream}...HEAD 2>/dev/null
+}
 
-#_stash=""
+function __git_commits_check__ {
+_commits=
 for _dir in "${_git_array[@]}"; do
-	#printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__ | tr '\n' "${_sep}")" >> "${_tempfile}"
-	#printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__ | tr '\n' "${_sep}")" | awk -F "${_sep}" '$2' >> "${_tempfile}"
-	_dirty_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status__)" | awk -F "${_sep}" '$6' )
+	_commits_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_commits__)" | awk -F "${_sep}" '$2')
 
-	#_dirty_out=$( git -C "${dir}" update-index --really-refresh && git diff-index --quiet HEAD -- )
-	if [[ -n "${_dirty_out}" ]]; then
-		_state="dirty"
-		#printf "%b\n" "${_dirty_out}"
-		printf "%b\n" "${_dirty_out}" | awk -F "${_sep}" '{print $1" [files]"}'
+	if [[ -n "${_commits_out}" ]]; then
+		_commits="true"
+		printf "%b\n" "${_commits_out}" | awk -F "${_sep}" '{print $1" [commits]"}'
 	fi
 done
+}
 
-# TODO make this work if everything is up to date
-#if [[ -z "${_state}" ]]; then
-#	printf "%b\n" ""${_script_name}": All working trees are clean."
-#	_state="All working trees are clean."
-#fi
+__git_state_check__
+__git_stash_check__
+__git_commits_check__
 
+if [[ -z "${_state}" ]]; then
+	_state_msg="All working trees are clean. "
+else
+	_state_msg=''
+fi
 
+if [[ -z "${_stash}" ]]; then
+	_stash_msg="Nothing is stashed. "
+else
+	_stash_msg=''
+fi
 
-#rm "${_tempfile}"
+if [[ -z "${_commits}" ]]; then
+	_commits_msg="All repos are up to date. "
+else
+	_commits_msg=''
+fi
+
+if [[ -n "${_state_msg}" || -n "${_stash_msg}" || -n "${_commits_msg}" ]]; then
+	printf "%b" ""${_script_name}": ${_state_msg}${_stash_msg}${_commits_msg}\n"
+fi
