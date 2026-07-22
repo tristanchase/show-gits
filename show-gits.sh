@@ -81,19 +81,13 @@ function __main_script__ {
 
 # Local functions
 
-# Show git status à la git-prompt.sh
-function __git_ps1__ {
-	__git_ps1 2>/dev/null
-}
-
-function __git_prompt__ {
-	if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
-		_git_prompt_color="${bold_orange}"
-	else
-		_git_prompt_color="${bold_cyan}"
-	fi
-
-	printf "$(__git_ps1__)"
+# Get the full status of the repos (-f|--full)
+function __full_list_full_status__ {
+	for _dir in "${_git_array[@]}"; do
+		printf "%b\n" "${_dir}"
+		git -C "${_dir}" status
+		printf "%b\n" ""
+	done
 }
 
 # Get a list of the repos with the short status (-s|--status)
@@ -104,6 +98,21 @@ function __full_list_short_status__ {
 	done
 }
 
+# Show git status à la git-prompt.sh
+function __git_prompt__ {
+	if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
+		_git_prompt_color="${bold_orange}"
+	else
+		_git_prompt_color="${bold_cyan}"
+	fi
+
+	printf "$(__git_ps1__)"
+}
+
+function __git_ps1__ {
+	__git_ps1 2>/dev/null
+}
+
 # Show the repos (-l|--list)
 function __list_repos__ {
 	for _dir in "${_git_array[@]}"; do
@@ -111,19 +120,8 @@ function __list_repos__ {
 	done
 }
 
-# Update the repos from remote (-u|--update)
-function __update_repos__ {
-	printf "%b\n" $HOME/**/ | grep "${_arg}"/$ | xargs dirname \
-	| xargs -P 16 -I {} sh -c ' git -C {} remote update > /dev/null && echo "{}...updated"'
-}
-
-# Get the full status of the repos (-f|--full)
-function __full_list_full_status__ {
-	for _dir in "${_git_array[@]}"; do
-		printf "%b\n" "${_dir}"
-		git -C "${_dir}" status
-		printf "%b\n" ""
-	done
+function __local_cleanup__ {
+	:
 }
 
 # Get the short status of the repos (default)
@@ -137,6 +135,96 @@ function __short_list_short_status__ {
 	done
 }
 
+function __z_dirty_state__ {
+	_sep=":"
+
+	_state_summary=
+	_stash_summary=
+	_commits_summary=
+
+	_tempfile=$HOME/devel/show-gits/"${_script_name}" && touch "${_tempfile}"
+	rm "${_tempfile}"
+
+	function __git_check_all__ {
+		for _dir in "${_git_array[@]}"; do
+			_state=
+			_stash=
+			_commits=
+
+			_dirty_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_state__)" | awk -F "${_sep}" '$6' )
+			_stash_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_stash__)" | awk -F "${_sep}" '$2' )
+			_commits_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_commits__)" | awk -F "${_sep}" '$2')
+
+			if [[ -n "${_dirty_out}" ]]; then
+				_state=" [files]"
+				_state_summary="true"
+			fi
+
+			if [[ -n "${_stash_out}" ]]; then
+				_stash=" [stash]"
+				_stash_summary="true"
+			fi
+
+			if [[ -n "${_commits_out}" ]]; then
+				_commits=" [commits]"
+				_commits_summary="true"
+			fi
+
+			if [[ -n "${_state}" || -n "${_stash}" || -n "${_commits}" ]]; then
+				printf "%b" "${_dir}" | \
+					awk -v awk_state="${_state}" -v awk_stash="${_stash}" -v awk_commits="${_commits}" -F "${_sep}" \
+					'{print $1 awk_state awk_stash awk_commits}'
+			fi
+		done
+	}
+
+	function __git_status_state__ {
+		git -C "${_dir}" status --branch  --porcelain=v2 | tr '\n' "${_sep}"
+	}
+
+	function __git_status_stash__ {
+		git -C "${_dir}" rev-parse --verify --quiet refs/stash | tr '\n' "${_sep}"
+	}
+
+	function __git_status_commits__ {
+		git -C "${_dir}" rev-list --left-right @{upstream}...HEAD 2>/dev/null
+	}
+
+	function __summary__ {
+		if [[ -z "${_state_summary}" ]]; then
+			_state_msg="All working trees are clean. "
+		else
+			_state_msg=''
+		fi
+
+		if [[ -z "${_stash_summary}" ]]; then
+			_stash_msg="Nothing is stashed. "
+		else
+			_stash_msg=''
+		fi
+
+		if [[ -z "${_commits_summary}" ]]; then
+			_commits_msg="All repos are up to date. "
+		else
+			_commits_msg=''
+		fi
+
+		if [[ -n "${_state_msg}" || -n "${_stash_msg}" || -n "${_commits_msg}" ]]; then
+			printf "%b" ""${_script_name}": ${_state_msg}${_stash_msg}${_commits_msg}\n"
+		fi
+	}
+
+	__git_check_all__
+	__summary__
+
+}
+
+# Update the repos from remote (-u|--update)
+function __update_repos__ {
+	printf "%b\n" $HOME/**/ | grep "${_arg}"/$ | xargs dirname \
+		| xargs -P 16 -I {} sh -c ' git -C {} remote update > /dev/null && echo "{}...updated"'
+	}
+
 # Upgrade the repos from remote (-U|--upgrade)
 function __upgrade_repos__ {
 	# Update the repos from remote
@@ -144,26 +232,26 @@ function __upgrade_repos__ {
 	# Find repos that can be upgraded via git pull
 	_upgrade_list=(
 		$(for _dir in "${_git_array[@]}"; do
-			cd "${_dir}"
-			if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[<]')" ]]; then
-				printf "%s\n" "${_dir}"
-			fi
-		done)
-	)
+		cd "${_dir}"
+		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[<]')" ]]; then
+			printf "%s\n" "${_dir}"
+		fi
+	done)
+)
 
-	if [[ -z "${_upgrade_list[@]}" ]]; then
-		printf "%b\n" ""${_script_name}": Repos are up to date."
-		exit 0
-	fi
+if [[ -z "${_upgrade_list[@]}" ]]; then
+	printf "%b\n" ""${_script_name}": Repos are up to date."
+	exit 0
+fi
 
-	_file_count="${#_upgrade_list[@]}"
-	if [[ "${_file_count}" -gt 1 ]]; then
-		_file_noun="repos"
-		_file_obj="them"
-	else
-		_file_noun="repo"
-		_file_obj="it"
-	fi
+_file_count="${#_upgrade_list[@]}"
+if [[ "${_file_count}" -gt 1 ]]; then
+	_file_noun="repos"
+	_file_obj="them"
+else
+	_file_noun="repo"
+	_file_obj="it"
+fi
 
 	# Present list of candidates for upgrade
 	printf "%b\n"
@@ -186,10 +274,6 @@ function __upgrade_repos__ {
 	fi
 	exit 0
 
-}
-
-function __local_cleanup__ {
-	:
 }
 
 # Source helper functions
@@ -216,7 +300,8 @@ case "${1:-}" in
 	(-f|?(--)f?(u?(l?(l))))  __full_list_full_status__ | __pager__ ;;
 	(-u|?(--)upd?(a?(t?(e)))) __update_repos__ ;;
 	(-U|?(--)upg?(r?(a?(d?(e))))) __upgrade_repos__ ;;
-	('') __short_list_short_status__ ;; # Default behavio[u]r
+	('') __z_dirty_state__ ;; # Default behavio[u]r
+	#('') __short_list_short_status__ ;; # Default behavio[u]r
 	(*)  printf "%b\n" ""${_script_name}": Option \""${1:-}"\" not recognized."  1>&2 ; __show_help__ ; exit 2  1>&2 ;;
 esac
 
