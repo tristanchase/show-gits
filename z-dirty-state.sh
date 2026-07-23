@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 
+function debug {
+export PS4='+ [${BASH_SOURCE}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
+exec > >(tee debug) 2>&1
+}
+
 shopt -s globstar
 shopt -s dotglob
 shopt -s extglob
 
 _script_name="z-dirty-state"
-_arg=".git"
-_git_array=( $(printf "%b\n" $HOME/**/ | grep "${_arg}"/$ | xargs dirname ) )
+_grep_arg="/.git/$"
+_git_array=( $(printf "%b\n" $HOME/**/ | grep "${_grep_arg}" | xargs dirname ) )
 
 # Copy from here into show-gits.sh as a function
 _sep=":"
@@ -60,7 +66,8 @@ function __git_status_state__ {
 
 function __git_status_stash__ {
 	#git -C "${_dir}" rev-parse --verify --quiet refs/stash | tr '\n' "${_sep}"
-	git -C "${_dir}" status --show-stash --porcelain=v2 | grep '# stash' | cut -c9-
+	#git -C "${_dir}" status --show-stash --porcelain=v2 | grep '# stash' | cut -c9-
+	git -C "${_dir}" status --show-stash --porcelain=v2 | grep '# stash' | awk '{print $3}'
 }
 
 function __git_status_commits__ {
