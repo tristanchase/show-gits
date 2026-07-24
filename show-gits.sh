@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+function debug {
+export PS4='+ [${BASH_SOURCE}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x
+exec > >(tee debug) 2>&1
+}
+
+#debug
 # Same as set -euE -o pipefail
 #set -o errexit
 #set -o nounset
@@ -21,7 +28,7 @@ Usage: ${_script_name} [OPTIONS]
 Description: Show the git repositories in your ${HOME} folder
 
 Options:
-    -d, [--]d[ebug]	Enable debug mode
+    #-d, [--]d[ebug]	Enable debug mode
     -f, [--]f[ull]	Show full report of the repos
     -h, [--]h[elp]	Display this help message
     -l, [--]l[ist]	List the repos (without status)
@@ -67,22 +74,14 @@ exit 2
 
 #-----------------------------------
 
-# Initialize variables
+function __find_gits__ {
 _grep_arg='/.git/$'
 _git_array=( $(printf "%b\n" $HOME/**/ | grep ${_grep_arg} | xargs dirname ) )
-
-# List of temp files to clean up on exit (put last)
-#_tempfiles=("${_dirfile}")
-
-## Put main script here
-function __main_script__ {
-	:
-} #end __main_script__
-
-# Local functions
+}
 
 # Get the full status of the repos (-f|--full)
 function __full_list_full_status__ {
+	__find_gits__
 	for _dir in "${_git_array[@]}"; do
 		printf "%b\n" "${_dir}"
 		git -C "${_dir}" status
@@ -92,6 +91,7 @@ function __full_list_full_status__ {
 
 # Get a list of the repos with the short status (-s|--status)
 function __full_list_short_status__ {
+	__find_gits__
 	for _dir in "${_git_array[@]}"; do
 		printf "%b\n" "${_dir}"
 		git -C "${_dir}" status -s
@@ -99,15 +99,15 @@ function __full_list_short_status__ {
 }
 
 # Show git status à la git-prompt.sh
-function __git_prompt__ {
-	if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
-		_git_prompt_color="${bold_orange}"
-	else
-		_git_prompt_color="${bold_cyan}"
-	fi
-
-	printf "$(__git_ps1__)"
-}
+#function __git_prompt__ {
+#	if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
+#		_git_prompt_color="${bold_orange}"
+#	else
+#		_git_prompt_color="${bold_cyan}"
+#	fi
+#
+#	printf "$(__git_ps1__)"
+#}
 
 function __git_ps1__ {
 	__git_ps1 2>/dev/null
@@ -115,17 +115,21 @@ function __git_ps1__ {
 
 # Show the repos (-l|--list)
 function __list_repos__ {
+	__find_gits__
 	for _dir in "${_git_array[@]}"; do
 		printf "%b\n" "${_dir}"
 	done
 }
 
-function __local_cleanup__ {
-	:
+function __pager__ {
+  #${PAGER:-more -e}
+  #more -e
+  less -FXRM
 }
 
 # Get the short status of the repos (default)
 function __short_list_short_status__ {
+	__find_gits__
 	for _dir in "${_git_array[@]}"; do
 		cd "${_dir}"
 		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
@@ -146,6 +150,7 @@ function __z_dirty_state__ {
 	rm "${_tempfile}"
 
 	function __git_check_all__ {
+		__find_gits__
 		for _dir in "${_git_array[@]}"; do
 			_state=
 			_stash=
@@ -226,37 +231,42 @@ function __z_dirty_state__ {
 
 # Update the repos from remote (-u|--update)
 function __update_repos__ {
-	printf "%b\n" $HOME/**/ | grep "${_grep_arg}" | xargs dirname \
-		| xargs -P 16 -I {} sh -c ' git -C {} remote update > /dev/null && echo "{}...updated"'
+	__find_gits__
+	printf "%b\n" "${_git_array[@]}" | xargs -P 0 -I {} bash -c ' git -C {} remote update &>/dev/null && echo "{}... updated" '
 	}
 
 # Upgrade the repos from remote (-U|--upgrade)
 function __upgrade_repos__ {
 	# Update the repos from remote
-	__update_repos__ #__fetch_remotes__
-	# Find repos that can be upgraded via git pull
+	__update_repos__
+
+	_sep=":"
+
+	function __git_status_commits__ {
+		git -C "${_dir}" rev-list --left-right @{upstream}...HEAD 2>/dev/null | tr '\n' "${_sep}"
+	}
+
 	_upgrade_list=(
 		$(for _dir in "${_git_array[@]}"; do
-		cd "${_dir}"
-		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[<]')" ]]; then
-			printf "%s\n" "${_dir}"
-		fi
-	done)
-)
+			printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_commits__)" | awk -F "${_sep}" '$2' \
+			| grep "<" | awk -F "${_sep}" '{print $1}'
+		done
+		)
+	)
 
-if [[ -z "${_upgrade_list[@]}" ]]; then
-	printf "%b\n" ""${_script_name}": Repos are up to date."
-	exit 0
-fi
+	if [[ -z "${_upgrade_list[@]}" ]]; then
+		printf "%b\n" ""${_script_name}": Repos are up to date."
+		exit 0
+	fi
 
-_file_count="${#_upgrade_list[@]}"
-if [[ "${_file_count}" -gt 1 ]]; then
-	_file_noun="repos"
-	_file_obj="them"
-else
-	_file_noun="repo"
-	_file_obj="it"
-fi
+	_file_count="${#_upgrade_list[@]}"
+	if [[ "${_file_count}" -gt 1 ]]; then
+		_file_noun="repos"
+		_file_obj="them"
+	else
+		_file_noun="repo"
+		_file_obj="it"
+	fi
 
 	# Present list of candidates for upgrade
 	printf "%b\n"
@@ -291,14 +301,14 @@ for _helper_file in functions colors git-prompt; do
 	fi
 done
 
-source ${HOME}/.functions.sh
+#source ${HOME}/.functions.sh
 source ${HOME}/.git-prompt.sh
 
 # Get some basic options
 # TODO Make this more robust (use getopt? I kinda like the vim-like style) (refactor-options-getopt)
 # refactor: rewrite options using getopt (refactor-options-getopt)
-case "${1:-}" in
-	(-d|?(--)d?(e?(b?(u?(g))))) __debugger__ ;;
+case "$1" in
+	#(-d|?(--)d?(e?(b?(u?(g))))) debug "$@" ;;
 	(-h|?(--)h?(e?(l?(p)))) __show_help__ ;;
 	(-s|?(--)s?(t?(a?(t?(u?(s)))))) __full_list_short_status__ | __pager__ ;;
 	(-l|?(--)l?(i?(s?(t)))) __list_repos__ | __pager__ ;;
@@ -309,16 +319,5 @@ case "${1:-}" in
 	#('') __short_list_short_status__ ;; # Default behavio[u]r
 	(*)  printf "%b\n" ""${_script_name}": Option \""${1:-}"\" not recognized."  1>&2 ; __show_help__ ; exit 2  1>&2 ;;
 esac
-
-# Main Script Wrapper
-if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
-	trap __traperr__ ERR
-	trap __ctrl_c__ INT
-	trap __cleanup__ EXIT
-
-	__main_script__
-
-
-fi
 
 exit 0
