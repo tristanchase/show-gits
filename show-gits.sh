@@ -21,13 +21,13 @@ Usage: ${_script_name} [OPTIONS]
 Description: Show the git repositories in your ${HOME} folder
 
 Options:
-  -d, [--]d[ebug]	Enable debug mode
-  -f, [--]f[ull]	Show full report of the repos
-  -h, [--]h[elp]	Display this help message
-  -l, [--]l[ist]	List the repos (without status)
-  -s, [--]s[tatus]	List the repos with short status
-  -u, [--]upd[ate]	Update the repos from remote
-  -U, [--]upg[rade]	Upgrade the repos from remote (git pull)
+    -d, [--]d[ebug]	Enable debug mode
+    -f, [--]f[ull]	Show full report of the repos
+    -h, [--]h[elp]	Display this help message
+    -l, [--]l[ist]	List the repos (without status)
+    -s, [--]s[tatus]	List the repos with short status
+  [-]u, [--]upd[ate]	Update the repos from remote
+  [-]U, [--]upg[rade]	Upgrade the repos from remote (git pull)
 
 Examples:
   ${_script_name} -u
@@ -68,8 +68,8 @@ exit 2
 #-----------------------------------
 
 # Initialize variables
-_grep_arg="/.git/$"
-_git_array=( $(printf "%b\n" $HOME/**/ | grep "${_grep_arg}" | xargs dirname ) )
+_grep_arg='/.git/$'
+_git_array=( $(printf "%b\n" $HOME/**/ | grep ${_grep_arg} | xargs dirname ) )
 
 # List of temp files to clean up on exit (put last)
 #_tempfiles=("${_dirfile}")
@@ -142,7 +142,7 @@ function __z_dirty_state__ {
 	_stash_summary=
 	_commits_summary=
 
-	_tempfile=$HOME/devel/show-gits/"${_script_name}" && touch "${_tempfile}"
+	_tempfile=temp-"${_script_name}" && touch "${_tempfile}"
 	rm "${_tempfile}"
 
 	function __git_check_all__ {
@@ -153,10 +153,9 @@ function __z_dirty_state__ {
 
 			_state_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_state__)" | awk -F "${_sep}" '$6' )
 			_stash_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_stash__)" | awk -F "${_sep}" '$2' )
-			_commits_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_commits__)" | awk -F "${_sep}" '$2')
+			_commits_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_commits__)" | awk -F "${_sep}" '$2' | awk '{print $1}' )
 
 			if [[ -n "${_state_out}" ]]; then
-				#_state="[files]"
 				_num=$( printf "%b\n" "${_state_out}" | awk -F "${_sep}" '{print NF - 6}' )
 				_state="[files:"${_num}"]"
 				_state_summary="true"
@@ -169,7 +168,11 @@ function __z_dirty_state__ {
 			fi
 
 			if [[ -n "${_commits_out}" ]]; then
-				_commits="[commits]"
+				_num_behind="<"$( printf "%b\n" "${_dir}" | git -C "${_dir}" status --branch --porcelain=v2 \
+					| tr '\n' "${_sep}"| awk -F "${_sep}" '{print $4}' | awk '{print $4}' | cut -c2- )
+				_num_ahead=$( printf "%b\n" "${_dir}" | git -C "${_dir}" status --branch --porcelain=v2 \
+					| tr '\n' "${_sep}"| awk -F "${_sep}" '{print $4}' | awk '{print $3}' | cut -c2- )">"
+				_commits="[commits:"${_num_behind}" "${_num_ahead}"]"
 				_commits_summary="true"
 			fi
 
@@ -181,51 +184,49 @@ function __z_dirty_state__ {
 		done
 	}
 
-function __git_status_state__ {
-	git -C "${_dir}" status --branch  --porcelain=v2 | tr '\n' "${_sep}"
-}
+	function __git_status_state__ {
+		git -C "${_dir}" status --branch  --porcelain=v2 | tr '\n' "${_sep}"
+	}
 
-function __git_status_stash__ {
-	#git -C "${_dir}" rev-parse --verify --quiet refs/stash | tr '\n' "${_sep}"
-	#git -C "${_dir}" status --show-stash --porcelain=v2 | grep '# stash' | cut -c9-
-	git -C "${_dir}" status --show-stash --porcelain=v2 | grep '# stash' | awk '{print $3}'
-}
+	function __git_status_stash__ {
+		git -C "${_dir}" status --show-stash --porcelain=v2 | grep '# stash' | awk '{print $3}'
+	}
 
-function __git_status_commits__ {
-	git -C "${_dir}" rev-list --left-right @{upstream}...HEAD 2>/dev/null
-}
+	function __git_status_commits__ {
+		git -C "${_dir}" rev-list --left-right @{upstream}...HEAD 2>/dev/null | tr '\n' "${_sep}"
+	}
 
-function __summary__ {
-	if [[ -z "${_state_summary}" ]]; then
-		_state_msg="All working trees are clean. "
-	else
-		_state_msg=''
-	fi
+	function __summary__ {
+		if [[ -z "${_state_summary}" ]]; then
+			_state_msg="All working trees are clean. "
+		else
+			_state_msg=''
+		fi
 
-	if [[ -z "${_stash_summary}" ]]; then
-		_stash_msg="Nothing is stashed. "
-	else
-		_stash_msg=''
-	fi
+		if [[ -z "${_stash_summary}" ]]; then
+			_stash_msg="Nothing is stashed. "
+		else
+			_stash_msg=''
+		fi
 
-	if [[ -z "${_commits_summary}" ]]; then
-		_commits_msg="All repos are up to date. "
-	else
-		_commits_msg=''
-	fi
+		if [[ -z "${_commits_summary}" ]]; then
+			_commits_msg="All repos are up to date. "
+		else
+			_commits_msg=''
+		fi
 
-	if [[ -n "${_state_msg}" || -n "${_stash_msg}" || -n "${_commits_msg}" ]]; then
-		printf "%b" ""${_script_name}": ${_state_msg}${_stash_msg}${_commits_msg}\n"
-	fi
-}
+		if [[ -n "${_state_msg}" || -n "${_stash_msg}" || -n "${_commits_msg}" ]]; then
+			printf "%b" ""${_script_name}": ${_state_msg}${_stash_msg}${_commits_msg}\n"
+		fi
+	}
 
-__git_check_all__
-__summary__
+	__git_check_all__
+	__summary__
 }
 
 # Update the repos from remote (-u|--update)
 function __update_repos__ {
-	printf "%b\n" $HOME/**/ | grep "${_arg}"/$ | xargs dirname \
+	printf "%b\n" $HOME/**/ | grep "${_grep_arg}" | xargs dirname \
 		| xargs -P 16 -I {} sh -c ' git -C {} remote update > /dev/null && echo "{}...updated"'
 	}
 
@@ -302,8 +303,8 @@ case "${1:-}" in
 	(-s|?(--)s?(t?(a?(t?(u?(s)))))) __full_list_short_status__ | __pager__ ;;
 	(-l|?(--)l?(i?(s?(t)))) __list_repos__ | __pager__ ;;
 	(-f|?(--)f?(u?(l?(l))))  __full_list_full_status__ | __pager__ ;;
-	(-u|?(--)upd?(a?(t?(e)))) __update_repos__ ;;
-	(-U|?(--)upg?(r?(a?(d?(e))))) __upgrade_repos__ ;;
+	?(-)u|?(--)upd?(a?(t?(e)))) __update_repos__ ;;
+	?(-)U|?(--)upg?(r?(a?(d?(e))))) __upgrade_repos__ ;;
 	('') __z_dirty_state__ ;; # Default behavio[u]r
 	#('') __short_list_short_status__ ;; # Default behavio[u]r
 	(*)  printf "%b\n" ""${_script_name}": Option \""${1:-}"\" not recognized."  1>&2 ; __show_help__ ; exit 2  1>&2 ;;

@@ -10,18 +10,19 @@ shopt -s globstar
 shopt -s dotglob
 shopt -s extglob
 
-_script_name="z-dirty-state"
-_grep_arg="/.git/$"
+_script_name=$(basename -s .sh "$0")
+_grep_arg='/.git/$'
 _git_array=( $(printf "%b\n" $HOME/**/ | grep "${_grep_arg}" | xargs dirname ) )
 
 # Copy from here into show-gits.sh as a function
+function __z_dirty_state__ {
 _sep=":"
 
 _state_summary=
 _stash_summary=
 _commits_summary=
 
-_tempfile=$HOME/devel/show-gits/"${_script_name}" && touch "${_tempfile}"
+_tempfile=temp-"${_script_name}" && touch "${_tempfile}"
 rm "${_tempfile}"
 
 function __git_check_all__ {
@@ -32,10 +33,9 @@ function __git_check_all__ {
 
 		_state_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_state__)" | awk -F "${_sep}" '$6' )
 		_stash_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_stash__)" | awk -F "${_sep}" '$2' )
-		_commits_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_commits__)" | awk -F "${_sep}" '$2')
+		_commits_out=$( printf "%b%b\n" "${_dir}${_sep}" "$(__git_status_commits__)" | awk -F "${_sep}" '$2' | awk '{print $1}' )
 
 		if [[ -n "${_state_out}" ]]; then
-			#_state="[files]"
 			_num=$( printf "%b\n" "${_state_out}" | awk -F "${_sep}" '{print NF - 6}' )
 			_state="[files:"${_num}"]"
 			_state_summary="true"
@@ -48,7 +48,11 @@ function __git_check_all__ {
 		fi
 
 		if [[ -n "${_commits_out}" ]]; then
-			_commits="[commits]"
+			_num_behind="<"$( printf "%b\n" "${_dir}" | git -C "${_dir}" status --branch --porcelain=v2 \
+			       	| tr '\n' "${_sep}"| awk -F "${_sep}" '{print $4}' | awk '{print $4}' | cut -c2- )
+			_num_ahead=$( printf "%b\n" "${_dir}" | git -C "${_dir}" status --branch --porcelain=v2 \
+			       	| tr '\n' "${_sep}"| awk -F "${_sep}" '{print $4}' | awk '{print $3}' | cut -c2- )">"
+			_commits="[commits:"${_num_behind}" "${_num_ahead}"]"
 			_commits_summary="true"
 		fi
 
@@ -65,13 +69,11 @@ function __git_status_state__ {
 }
 
 function __git_status_stash__ {
-	#git -C "${_dir}" rev-parse --verify --quiet refs/stash | tr '\n' "${_sep}"
-	#git -C "${_dir}" status --show-stash --porcelain=v2 | grep '# stash' | cut -c9-
 	git -C "${_dir}" status --show-stash --porcelain=v2 | grep '# stash' | awk '{print $3}'
 }
 
 function __git_status_commits__ {
-	git -C "${_dir}" rev-list --left-right @{upstream}...HEAD 2>/dev/null
+	git -C "${_dir}" rev-list --left-right @{upstream}...HEAD 2>/dev/null | tr '\n' "${_sep}"
 }
 
 function __summary__ {
@@ -100,3 +102,6 @@ function __summary__ {
 
 __git_check_all__
 __summary__
+}
+
+__z_dirty_state__
