@@ -68,8 +68,8 @@ exit 2
 #-----------------------------------
 
 # Initialize variables
-_arg='.git'
-_git_array=( $(printf "%b\n" $HOME/**/ | grep "${_arg}"/$ | xargs dirname ) )
+_grep_arg="/.git/$"
+_git_array=( $(printf "%b\n" $HOME/**/ | grep "${_grep_arg}" | xargs dirname ) )
 
 # List of temp files to clean up on exit (put last)
 #_tempfiles=("${_dirfile}")
