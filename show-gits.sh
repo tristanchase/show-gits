@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2317
 function debug {
-export PS4='+ [${BASH_SOURCE}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+export PS4='+ [${BASH_SOURCE[0]}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 set -x
 exec > >(tee debug) 2>&1
 }
@@ -25,15 +26,15 @@ function __show_help__ {
 	cat << EOF
 Usage: ${_script_name} [OPTIONS]
 
-Description: Show the git repositories in your ${HOME} folder
+Description: Show the git repositories residing in "${HOME}"
 
 Options:
-    #-d, [--]d[ebug]	Enable debug mode
+    #-d, [--]d[ebug]	Enable debug mode (disabled for now)
     -f, [--]f[ull]	Show full report of the repos
     -h, [--]h[elp]	Display this help message
     -l, [--]l[ist]	List the repos (without status)
     -s, [--]s[tatus]	List the repos with short status
-  [-]u, [--]upd[ate]	Update the repos from remote
+  [-]u, [--]upd[ate]	Update the repos from remote (git fetch)
   [-]U, [--]upg[rade]	Upgrade the repos from remote (git pull)
 
 Examples:
@@ -76,16 +77,19 @@ exit 2
 
 function __find_gits__ {
 _grep_arg='/.git/$'
-_git_array=( $(printf "%b\n" $HOME/**/ | grep ${_grep_arg} | xargs dirname ) )
+_git_array=( $(printf "%b\n" "${HOME}"/**/ | grep ${_grep_arg} | xargs dirname ) )
 }
 
 # Get the full status of the repos (-f|--full)
 function __full_list_full_status__ {
 	__find_gits__
+	printf "%b\n" "Full status report:"
 	for _dir in "${_git_array[@]}"; do
+		printf "%b\n" "-----------------------------------"
 		printf "%b\n" "${_dir}"
+		printf "\n"
 		git -C "${_dir}" status
-		printf "%b\n" ""
+		printf "\n"
 	done
 }
 
@@ -162,13 +166,13 @@ function __z_dirty_state__ {
 
 			if [[ -n "${_state_out}" ]]; then
 				_num=$( printf "%b\n" "${_state_out}" | awk -F "${_sep}" '{print NF - 6}' )
-				_state="[files:"${_num}"]"
+				_state="[files:${_num}]"
 				_state_summary="true"
 			fi
 
 			if [[ -n "${_stash_out}" ]]; then
 				_num=$( printf "%b\n" "${_stash_out}" | awk -F "${_sep}" '{print $2}' )
-				_stash="[stash:"${_num}"]"
+				_stash="[stash:${_num}]"
 				_stash_summary="true"
 			fi
 
@@ -177,7 +181,7 @@ function __z_dirty_state__ {
 					| tr '\n' "${_sep}"| awk -F "${_sep}" '{print $4}' | awk '{print $4}' | cut -c2- )
 				_num_ahead=$( printf "%b\n" "${_dir}" | git -C "${_dir}" status --branch --porcelain=v2 \
 					| tr '\n' "${_sep}"| awk -F "${_sep}" '{print $4}' | awk '{print $3}' | cut -c2- )">"
-				_commits="[commits:"${_num_behind}" "${_num_ahead}"]"
+				_commits="[commits:${_num_behind} ${_num_ahead}]"
 				_commits_summary="true"
 			fi
 
@@ -221,7 +225,7 @@ function __z_dirty_state__ {
 		fi
 
 		if [[ -n "${_state_msg}" || -n "${_stash_msg}" || -n "${_commits_msg}" ]]; then
-			printf "%b" ""${_script_name}": ${_state_msg}${_stash_msg}${_commits_msg}\n"
+			printf "%b" "${_script_name}: ${_state_msg}${_stash_msg}${_commits_msg}\n"
 		fi
 	}
 
@@ -233,7 +237,7 @@ function __z_dirty_state__ {
 function __update_repos__ {
 	__find_gits__
 	printf "%b\n" "${_git_array[@]}" | xargs -P 0 -I {} bash -c ' git -C {} remote update &>/dev/null && echo "{}... updated" '
-	}
+}
 
 # Upgrade the repos from remote (-U|--upgrade)
 function __upgrade_repos__ {
@@ -254,8 +258,8 @@ function __upgrade_repos__ {
 		)
 	)
 
-	if [[ -z "${_upgrade_list[@]}" ]]; then
-		printf "%b\n" ""${_script_name}": Repos are up to date."
+	if [[ -z "${_upgrade_list[*]}" ]]; then
+		printf "%b\n" "${_script_name}: Repos are up to date."
 		exit 0
 	fi
 
@@ -269,22 +273,22 @@ function __upgrade_repos__ {
 	fi
 
 	# Present list of candidates for upgrade
-	printf "%b\n"
-	printf "%b\n" "The following "${_file_noun}" can be upgraded (git pull):"
+	printf "\n"
+	printf "%b\n" "The following ${_file_noun} can be upgraded (via git pull):"
 	printf "  %s\n" "${_upgrade_list[@]}"
-	printf "%b" "Would you like to upgrade "${_file_obj}" (y/N)? "
-	read _upgrade_yN
+	printf "%b" "Would you like to upgrade ${_file_obj}? [Y/n] "
+	read -r UPGRADE
 
 	# Allow user to choose one, many, or all from the list
 	# TODO Add chooser here (feat-chooser)
 
 	# Upgrade repos
-	if [[ "${_upgrade_yN}" =~ (y|Y) ]]; then
+	if [[ ! "${UPGRADE}" =~ (n|N) ]]; then
 		for _repo in "${_upgrade_list[@]}"; do
-			cd "${_repo}"
+			cd "${_repo}" || printf "%b\n" "[${BASH_SOURCE[0]}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }cd: Error"; exit 3
 			printf "%b\n" "Upgrading ${_repo}"
 			git pull
-			printf "%b\n"
+			printf "\n"
 		done
 	fi
 	exit 0
@@ -293,16 +297,16 @@ function __upgrade_repos__ {
 
 # Source helper functions
 for _helper_file in functions colors git-prompt; do
-	if [[ ! -e ${HOME}/."${_helper_file}".sh ]]; then
-		printf "%b\n" "Downloading missing script file "${_helper_file}".sh..."
+	if [[ ! -e "${HOME}"/."${_helper_file}".sh ]]; then
+		printf "%b\n" "Downloading missing script file ${_helper_file}.sh..."
 		sleep 1
-		wget -nv -P ${HOME} https://raw.githubusercontent.com/tristanchase/dotfiles/main/"${_helper_file}".sh
-		mv ${HOME}/"${_helper_file}".sh ${HOME}/."${_helper_file}".sh
+		wget -nv -P "${HOME}" https://raw.githubusercontent.com/tristanchase/dotfiles/main/"${_helper_file}".sh
+		mv "${HOME}"/"${_helper_file}".sh "${HOME}"/."${_helper_file}".sh
 	fi
 done
 
-#source ${HOME}/.functions.sh
-source ${HOME}/.git-prompt.sh
+#source "${HOME}"/.functions.sh
+source "${HOME}"/.git-prompt.sh
 
 # Get some basic options
 # TODO Make this more robust (use getopt? I kinda like the vim-like style) (refactor-options-getopt)
@@ -317,7 +321,7 @@ case "$1" in
 	?(-)U|?(--)upg?(r?(a?(d?(e))))) __upgrade_repos__ ;;
 	('') __z_dirty_state__ ;; # Default behavio[u]r
 	#('') __short_list_short_status__ ;; # Default behavio[u]r
-	(*)  printf "%b\n" ""${_script_name}": Option \""${1:-}"\" not recognized."  1>&2 ; __show_help__ ; exit 2  1>&2 ;;
+	(*)  printf "%b\n" "${_script_name}: Option \"${1:-}\" not recognized."  1>&2 ; __show_help__ ;;
 esac
 
 exit 0
