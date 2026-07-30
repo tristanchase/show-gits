@@ -26,7 +26,7 @@ function __show_help__ {
 	cat << EOF
 Usage: ${_script_name} [OPTIONS]
 
-Description: Show the git repositories residing in "${HOME}"
+Description: Show the git repositories residing in ${HOME}
 
 Options:
     #-d, [--]d[ebug]	Enable debug mode (disabled for now)
