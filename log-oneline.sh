@@ -24,7 +24,7 @@ function __log_oneline__ {
 	_sep=","
 
 	function __log_out__ {
-		git -C "${_dir}" log -1 --format=format:'%as'"${_sep}""%s"
+		git -C "${_dir}" log -1 --format=format:'%as'"${_sep}"'%s'
 	}
 
 	_oneline_out=$( for _dir in "${_git_array[@]}"; do
