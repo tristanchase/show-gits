@@ -6,6 +6,8 @@ set -x
 exec > >(tee debug) 2>&1
 }
 
+#debug
+
 shopt -s globstar
 shopt -s dotglob
 shopt -s extglob

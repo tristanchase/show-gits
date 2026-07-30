@@ -21,21 +21,25 @@ rm "${_tempfile}"
 
 # Copy from here into show-gits.sh as a function
 function __log_oneline__ {
-	_sep=":"
+	_sep=","
 
 	function __log_out__ {
-		git -C "${_dir}" log -1 --format=format:'%as'"${_sep}"'%s'
-		#git -C "${_dir}" log -1 --oneline
+		git -C "${_dir}" log -1 --format=format:'%as'"${_sep}""%s"
 	}
 
-	_oneline_out=( $( for _dir in "${_git_array[@]}"; do
+	_oneline_out=$( for _dir in "${_git_array[@]}"; do
 			printf "%b%b\n" "${_dir}${_sep}" "$(__log_out__)"
 		done )
-	)
 
-	printf "%b\n" "${_oneline_out[*]}" | awk -F"${_sep}" '{print $0}' | sort -t"${_sep}" -k2,2n
+	printf "%b\n" "${_oneline_out[@]}" | awk -F"${_sep}" '{print $2","$1","$3}' \
+		| column -t -s"${_sep}" -o " | " | sort -t"|" -k1,1r | __pager__
 
-	#printf "%b\n" "${_oneline_out[@]}" | awk -F"${_sep}" '{print $0}' | sort -t"${_sep}" -k2,2n
+}
+
+function __pager__ {
+  #${PAGER:-more -e}
+  #more -e
+  less -FXRM
 }
 
 __log_oneline__
