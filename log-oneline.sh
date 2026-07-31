@@ -21,7 +21,7 @@ rm "${_tempfile}"
 
 # Copy from here into show-gits.sh as a function
 function __log_oneline__ {
-	_sep=","
+	local _sep=","
 
 	function __log_out__ {
 		git -C "${_dir}" log -1 --format=format:'%as'"${_sep}"'%s'
@@ -31,7 +31,7 @@ function __log_oneline__ {
 			printf "%b%b\n" "${_dir}${_sep}" "$(__log_out__)"
 		done )
 
-	printf "%b\n" "${_oneline_out[@]}" | awk -F"${_sep}" '{print $2","$1","$3}' \
+	printf "%b\n" "${_oneline_out[@]}" | awk -F"${_sep}" -v awk_sep="${_sep}" '{print $2awk_sep$1awk_sep$3}' \
 		| column -t -s"${_sep}" -o " | " | sort -t"|" -k1,1r | __pager__
 
 }

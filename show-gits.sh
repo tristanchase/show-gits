@@ -33,6 +33,7 @@ Options:
     -f, [--]f[ull]	Show full report of the repos
     -h, [--]h[elp]	Display this help message
     -l, [--]l[ist]	List the repos (without status)
+    -o, [--]o[neline]	Display a list of the repos sorted be newest first
     -s, [--]s[tatus]	List the repos with short status
   [-]u, [--]upd[ate]	Update the repos from remote (git fetch)
   [-]U, [--]upg[rade]	Upgrade the repos from remote (git pull)
@@ -123,6 +124,23 @@ function __list_repos__ {
 	for _dir in "${_git_array[@]}"; do
 		printf "%b\n" "${_dir}"
 	done
+}
+
+function __log_oneline__ {
+	__find_gits__
+	local _sep=","
+
+	function __log_out__ {
+		git -C "${_dir}" log -1 --format=format:'%as'"${_sep}"'%s'
+	}
+
+	_oneline_out=$( for _dir in "${_git_array[@]}"; do
+			printf "%b%b\n" "${_dir}${_sep}" "$(__log_out__)"
+		done )
+
+	printf "%b\n" "${_oneline_out[@]}" | awk -F"${_sep}" -v awk_sep="${_sep}" '{print $2awk_sep$1awk_sep$3}' \
+		| column -t -s"${_sep}" -o " | " | sort -t"|" -k1,1r | __pager__
+
 }
 
 function __pager__ {
@@ -313,12 +331,13 @@ source "${HOME}"/.git-prompt.sh
 # refactor: rewrite options using getopt (refactor-options-getopt)
 case "$1" in
 	#(-d|?(--)d?(e?(b?(u?(g))))) debug "$@" ;;
-	(-h|?(--)h?(e?(l?(p)))) __show_help__ ;;
-	(-s|?(--)s?(t?(a?(t?(u?(s)))))) __full_list_short_status__ | __pager__ ;;
-	(-l|?(--)l?(i?(s?(t)))) __list_repos__ | __pager__ ;;
-	(-f|?(--)f?(u?(l?(l))))  __full_list_full_status__ | __pager__ ;;
-	?(-)u|?(--)upd?(a?(t?(e)))) __update_repos__ ;;
-	?(-)U|?(--)upg?(r?(a?(d?(e))))) __upgrade_repos__ ;;
+	(-h|?(--)h?(e?(l?(p))) ) __show_help__ ;;
+	(-s|?(--)s?(t?(a?(t?(u?(s))))) ) __full_list_short_status__ | __pager__ ;;
+	(-l|?(--)l?(i?(s?(t))) ) __list_repos__ | __pager__ ;;
+	(-f|?(--)f?(u?(l?(l))) )  __full_list_full_status__ | __pager__ ;;
+	(-o|?(--)o?(n?(e?(l?(i?(n?(e)))))) ) __log_oneline__ ;;
+	?(-)u|?(--)upd?(a?(t?(e))) ) __update_repos__ ;;
+	?(-)U|?(--)upg?(r?(a?(d?(e)))) ) __upgrade_repos__ ;;
 	('') __z_dirty_state__ ;; # Default behavio[u]r
 	#('') __short_list_short_status__ ;; # Default behavio[u]r
 	(*)  printf "%b\n" "${_script_name}: Option \"${1:-}\" not recognized."  1>&2 ; __show_help__ ;;
