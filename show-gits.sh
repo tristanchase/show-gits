@@ -55,7 +55,7 @@ exit 2
 #  git
 
 #-----------------------------------
-# TODO Section (see ~/devel/conventional-commits/TODO for details)
+# TODO Section (see ~/dotfiles/conventional-commits/TODO-help for details)
 # - [x] feat: add warning if sourced files are missing (feat-warning)
 # - [x] feat: add upgrade repos function (feat-upgrade-repos)
 # - [x] refactor: refactor options (refactor-options)
