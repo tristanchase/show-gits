@@ -26,17 +26,17 @@ function __show_help__ {
 	cat << EOF
 Usage: ${_script_name} [OPTIONS]
 
-Description: Show the git repositories residing in ${HOME}
+Description: Show git repositories residing in ${HOME}
 
 Options:
     #-d, [--]d[ebug]	Enable debug mode (disabled for now)
-    -f, [--]f[ull]	Show full report of the repos
+    -f, [--]f[ull]	Show full report of repos
     -h, [--]h[elp]	Display this help message
-    -l, [--]l[ist]	List the repos (without status)
-    -o, [--]o[neline]	Display a list of the repos sorted be newest first
-    -s, [--]s[tatus]	List the repos with short status
-  [-]u, [--]upd[ate]	Update the repos from remote (git fetch)
-  [-]U, [--]upg[rade]	Upgrade the repos from remote (git pull)
+    -l, [--]l[ist]	List repos (without status)
+    -o, [--]o[neline]	List repos by date of last commit, newest first
+    -s, [--]s[tatus]	List repos with short status
+  [-]u, [--]upd[ate]	Update repos from remote (git fetch)
+  [-]U, [--]upg[rade]	Upgrade repos from remote (git pull)
 
 Examples:
   ${_script_name} -u
