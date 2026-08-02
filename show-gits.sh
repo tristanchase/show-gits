@@ -303,7 +303,7 @@ function __upgrade_repos__ {
 	# Upgrade repos
 	if [[ ! "${UPGRADE}" =~ (n|N) ]]; then
 		for _repo in "${_upgrade_list[@]}"; do
-			cd "${_repo}" || printf "%b\n" "[${BASH_SOURCE[0]}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }cd: Error"; exit 3
+			cd "${_repo}" || { printf "%b\n" "[${BASH_SOURCE[0]}:${LINENO}]: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }cd: Error"; exit 3; }
 			printf "%b\n" "Upgrading ${_repo}"
 			git pull
 			printf "\n"
