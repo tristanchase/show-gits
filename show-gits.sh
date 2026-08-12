@@ -128,25 +128,23 @@ function __list_repos__ {
 
 function __log_oneline__ {
 	__find_gits__
+
+	function __date__ { git -C "${_dir}" log -1 --format=format:'%as'; }
+	function __ref__ { git -C "${_dir}" rev-parse --abbrev-ref HEAD; }
+	function __subj__ { git -C "${_dir}" log -1 --format=format:'%s'; }
+
 	local _sep=","
 
-	function __log_out__ {
-		git -C "${_dir}" log -1 --format=format:'%as'"${_sep}"'%s'
-	}
-
-	_oneline_out=$( for _dir in "${_git_array[@]}"; do
-			printf "%b%b\n" "${_dir}${_sep}" "$(__log_out__)"
-		done )
-
-	printf "%b\n" "${_oneline_out[@]}" | awk -F"${_sep}" -v awk_sep="${_sep}" '{print $2awk_sep$1awk_sep$3}' \
+	for _dir in "${_git_array[@]}"; do
+		printf "%b\n" "$(__date__)${_sep}${_dir} ($(__ref__))${_sep}$(__subj__)"
+	done \
 		| column -t -s"${_sep}" -o " | " | sort -t"|" -k1,1r | __pager__
-
 }
 
 function __pager__ {
   #${PAGER:-more -e}
   #more -e
-  less -FXRM
+  less -FXRMS
 }
 
 # Get the short status of the repos (default)
