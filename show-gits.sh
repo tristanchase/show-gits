@@ -134,11 +134,15 @@ function __log_oneline__ {
 	function __subj__ { git -C "${_dir}" log -1 --format=format:'%s'; }
 
 	local _sep=","
+	local _bold="\e[1m"
+	local _underline="\e[4m"
+	local _reset="\e[0m"
+	local _headers=$( printf "${_underline}${_bold}Date,/path/to/repo (branch),Commit Message${_reset}" )
 
 	for _dir in "${_git_array[@]}"; do
 		printf "%b\n" "$(__date__)${_sep}${_dir} ($(__ref__))${_sep}$(__subj__)"
 	done \
-		| column -t -s"${_sep}" -o " | " | sort -t"|" -k1,1r | __pager__
+		| column -t -N"${_headers}" -s"${_sep}" -o " | " | sort -t"|" -k1,1r | __pager__
 }
 
 function __pager__ {
