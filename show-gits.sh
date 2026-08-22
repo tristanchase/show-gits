@@ -137,12 +137,21 @@ function __log_oneline__ {
 	local _bold="\e[1m"
 	local _underline="\e[4m"
 	local _reset="\e[0m"
-	local _headers=$( printf "${_underline}${_bold}Date,/path/to/repo (branch),Commit Message${_reset}" )
+	local _header_1="Date"
+	local _header_2="/path/to/repo (branch)"
+	local _header_3="Subject"
+	local _header_3_width=$(printf "${_header_3}" | wc -L)
+	local _col_3_width=$(__subj__ | wc -L)
+	local _last_col_fill=$(("${_col_3_width}"-"${_header_3_width}"+3))
+	local _header_last=$( printf "%s%*s" "${_header_3}" "${_last_col_fill}" )
+
+	local _header_row=$( printf "${_underline}${_bold}${_header_1},${_header_2},${_header_last}${_reset}" )
+	#local _header_row=$( printf "${_underline}${_bold}Date,/path/to/repo (branch),Commit Message${_reset}" )
 
 	for _dir in "${_git_array[@]}"; do
 		printf "%b\n" "$(__date__)${_sep}${_dir} ($(__ref__))${_sep}$(__subj__)"
 	done \
-		| column -t -N"${_headers}" -s"${_sep}" -o " | " | sort -t"|" -k1,1r | __pager__
+		| column -t -N${_header_row} -s"${_sep}" -o " | " | sort -t"|" -k1,1r | __pager__
 }
 
 function __pager__ {
