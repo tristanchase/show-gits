@@ -141,12 +141,12 @@ function __log_oneline__ {
 	local _header_2="/path/to/repo (branch)"
 	local _header_3="Subject"
 	local _header_3_width=$(printf "${_header_3}" | wc -L)
-	local _col_3_width=$(__subj__ | wc -L)
-	local _last_col_fill=$(("${_col_3_width}"-"${_header_3_width}"+3))
+	local _col_3_width=$(for _dir in "${_git_array}"; do __subj__ | wc -L; done)
+	local _padding=3
+	local _last_col_fill=$(("${_col_3_width}"-"${_header_3_width}"+"${_padding}"))
 	local _header_last=$( printf "%s%*s" "${_header_3}" "${_last_col_fill}" )
 
 	local _header_row=$( printf "${_underline}${_bold}${_header_1},${_header_2},${_header_last}${_reset}" )
-	#local _header_row=$( printf "${_underline}${_bold}Date,/path/to/repo (branch),Commit Message${_reset}" )
 
 	for _dir in "${_git_array[@]}"; do
 		printf "%b\n" "$(__date__)${_sep}${_dir} ($(__ref__))${_sep}$(__subj__)"
