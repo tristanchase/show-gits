@@ -141,7 +141,7 @@ function __log_oneline__ {
 	local _header_2="/path/to/repo (branch)"
 	local _header_3="Subject"
 	local _header_3_width=$(printf "${_header_3}" | wc -L)
-	local _col_3_width=$(for _dir in "${_git_array}"; do __subj__ | wc -L; done)
+	local _col_3_width=50
 	local _padding=3
 	local _last_col_fill=$(("${_col_3_width}"-"${_header_3_width}"+"${_padding}"))
 	local _header_last=$( printf "%s%*s" "${_header_3}" "${_last_col_fill}" )
