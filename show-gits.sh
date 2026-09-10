@@ -8,12 +8,13 @@ exec > >(tee debug) 2>&1
 }
 
 #debug
+
 # Same as set -euE -o pipefail
 #set -o errexit
 #set -o nounset
 #set -o errtrace
 #set -o pipefail
-IFS=$'\n\t'
+#IFS=$'\n\t'
 
 shopt -s globstar
 shopt -s dotglob
