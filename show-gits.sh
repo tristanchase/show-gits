@@ -14,7 +14,7 @@ exec > >(tee debug) 2>&1
 #set -o nounset
 #set -o errtrace
 #set -o pipefail
-#IFS=$'\n\t'
+IFS=$'\n\t'
 
 shopt -s globstar
 shopt -s dotglob
