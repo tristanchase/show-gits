@@ -27,7 +27,8 @@ function __show_help__ {
 	cat << EOF
 Usage: ${_script_name} [OPTIONS]
 
-Description: Show git repositories residing in ${HOME}
+Description: Shows all git repositories residing in ${HOME}. When called without
+arguments, the script shows a summary of the repos (state, stash, commits).
 
 Options:
     #-d, [--]d[ebug]	Enable debug mode (disabled for now)
@@ -161,18 +162,19 @@ function __pager__ {
   less -FXRMS
 }
 
-# Get the short status of the repos (default)
-function __short_list_short_status__ {
-	__find_gits__
-	for _dir in "${_git_array[@]}"; do
-		cd "${_dir}"
-		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
-			printf "%b\n" "${_dir}"
-			git -C "${_dir}" status -s
-		fi
-	done
-}
+## Get the short status of the repos (default)
+#function __short_list_short_status__ {
+#	__find_gits__
+#	for _dir in "${_git_array[@]}"; do
+#		cd "${_dir}"
+#		if [[ "$(printf "%b\n" "$(__git_ps1__)" | grep '[\*\+%<>\$]')" ]]; then
+#			printf "%b\n" "${_dir}"
+#			git -C "${_dir}" status -s
+#		fi
+#	done
+#}
 
+# Get a summary of the repos (default)
 function __z_dirty_state__ {
 	_sep=":"
 
