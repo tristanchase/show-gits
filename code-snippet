@@ -1,0 +1,2 @@
+printf "%b\n" ~/**/ | grep /.git/$ | xargs bash -c 'for dir do printf $dir,; stat -c %y $dir; done' _ | less
+printf "%b\n" ~/**/ | grep /.git/$ | xargs dirname | xargs bash -c 'for dir do printf $dir,; stat -c %y $dir; done' _ | less
